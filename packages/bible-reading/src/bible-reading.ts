@@ -2,10 +2,10 @@ import { LitElement, PropertyValueMap, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { marked } from "marked";
-import "./bible-excerpt.js";
-import "./bible-reading-calendar.js";
-import { BibleReadingCalendar, ReadingDateSelectedEvent } from "./bible-reading-calendar.js";
-import { BibleExcerpt } from "./bible-excerpt.js";
+import "../../bible-reading-calendar/src/bible-reading-calendar.js";
+import "../../bible-excerpt/src/bible-excerpt.js";
+import { BibleReadingCalendar, ReadingDateSelectedEvent } from "@cyper8/bible-reading-calendar";
+import { BibleExcerpt } from "@cyper8/bible-excerpt";
 
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
@@ -129,8 +129,6 @@ export class BibleReading extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'bible-excerpt': BibleExcerpt;
     'bible-reading': BibleReading;
-    'bible-reading-calendar': BibleReadingCalendar;
   }
 }

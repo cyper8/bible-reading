@@ -1,17 +1,8 @@
 {
-  "name": "bible-excerpt",
-  "version": "0.0.3",
-  "type": "module",
-  "main": "./dist/bible-excerpt.js",
-  "exports": "./dist/bible-excerpt.js",
-  "scripts": {
-    "start": "vite",
-    "build": "tsc"
-  },
-  "dependencies": {
-    "lit": "^3.2.1",
-    "marked": "^15.0.6"
-  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "devDependencies": {
     "typescript": "^5.8.3",
     "vite": "^6.2.6"

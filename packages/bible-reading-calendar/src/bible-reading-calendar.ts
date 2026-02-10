@@ -242,3 +242,9 @@ export class BibleReadingCalendar extends LitElement {
   }
 
 }
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'bible-reading-calendar': BibleReadingCalendar;
+  }
+}

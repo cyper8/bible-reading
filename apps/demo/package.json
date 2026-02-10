@@ -1,0 +1,7 @@
+{
+    "dependencies": {
+        "@cyper8/bible-excerpt": "*",
+        "@cyper8/bible-reading": "*",
+        "@cyper8/bible-reading-calendar": "*"
+    }
+}

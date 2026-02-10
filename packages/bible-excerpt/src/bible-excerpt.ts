@@ -200,3 +200,9 @@ export class BibleExcerpt extends LitElement {
   }
   `;
 }
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'bible-excerpt': BibleExcerpt;
+  }
+}
