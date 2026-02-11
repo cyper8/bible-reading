@@ -12,7 +12,7 @@ export declare type ReadingDateSelectedEvent = CustomEvent<ReadingData> & {
   type: 'reading-date-selected'
 }
 
-export const daysInMonth = (m0: number, y?: number) => {
+const daysInMonth = (m0: number, y?: number) => {
   let d = new Date();
   d.setFullYear(y || d.getFullYear())
   d.setMonth(m0 + 1);

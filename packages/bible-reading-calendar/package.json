@@ -1,10 +1,14 @@
 {
-  "name": "bible-reading-calendar",
+  "name": "@cyper8/bible-reading-calendar",
   "version": "0.0.1",
   "type": "module",
-  "main": "./dist/bible-reading-calendar.js",
-  "exports": "./dist/bible-reading-calendar.js",
-  "types": "./dist/bible-reading-calendar.d.ts",
+  "main": "./index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
   "scripts": {
     "start": "vite",
     "build": "vite build"
@@ -14,6 +18,7 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vite": "^6.2.6"
+    "vite": "^6.2.6",
+    "lit": "^3.2.1"
   }
 }

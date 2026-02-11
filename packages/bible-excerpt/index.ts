@@ -1,0 +1,1 @@
+export {BibleExcerpt, BollsBible} from "./src/bible-excerpt"

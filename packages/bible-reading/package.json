@@ -1,19 +1,30 @@
 {
-  "name": "bible-reading",
+  "name": "@cyper8/bible-reading",
   "version": "0.0.1",
   "type": "module",
-  "main": "./dist/bible-reading.js",
-  "exports": "./dist/bible-reading.js",
-  "types": "./dist/bible-reading.d.ts",
+  "main": "./index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
   "scripts": {
     "start": "vite",
     "build": "vite build"
   },
+  "dependencies": {
+    "@cyper8/bible-excerpt": "workspace:*",
+    "@cyper8/bible-reading-calendar": "workspace:*"
+  },
   "peerDependencies": {
-    "lit": "^3.2.1"
+    "lit": "^3.2.1",
+    "marked": "^17.0.1"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vite": "^6.2.6"
+    "vite": "^6.2.6",
+    "lit": "^3.2.1",
+    "marked": "^17.0.1"
   }
 }

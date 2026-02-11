@@ -1,7 +1,18 @@
 {
+    "name": "bible-excerpt-demo",
+    "version": "0.0.1",
+    "private": true,
     "dependencies": {
-        "@cyper8/bible-excerpt": "*",
-        "@cyper8/bible-reading": "*",
-        "@cyper8/bible-reading-calendar": "*"
+        "@cyper8/bible-excerpt": "workspace:*",
+        "@cyper8/bible-reading": "workspace:*",
+        "@cyper8/bible-reading-calendar": "workspace:*",
+        "lit": "^3.2.1"
+    },
+    "scripts": {
+        "start": "vite"
+    },
+    "devDependencies": {
+        "typescript": "^5.8.3",
+        "vite": "^6.2.6"
     }
 }

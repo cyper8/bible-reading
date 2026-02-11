@@ -7,50 +7,52 @@ import { until } from 'lit/directives/until.js';
 const TRANSLATIONS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/languages.json';
 const BOOKS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/translations_books.json';
 
-declare interface BVerse {
-  pk: number;
-  chapter: number;
-  verse: number;
-  text: string;
+export namespace BollsBible {
+  export declare interface BibleVerse {
+    pk: number;
+    chapter: number;
+    verse: number;
+    text: string;
+  }
+  
+  export declare interface BibleSingleVerse extends BibleVerse {
+    translation: string;
+    book: number;
+  }
+  
+  export declare interface BibleChapterVerse extends BibleVerse {
+    comment?: string;
+  }
+  
+  export declare interface BibleEdition {
+    short_name: string
+    full_name: string
+    commentaries?: boolean
+    updated: number
+    info?: string
+    dir?: 'rtl' | 'ltr'
+  }
+  
+  export declare interface BibleTranslation {
+    language: string,
+    editions: BibleEdition[]
+  }
+  
+  export declare interface BibleBook {
+    bookid: number
+    chronorder: number
+    name: string
+    chapter: number
+  }
+  
+  export declare type BibleTranslations = BibleTranslation[];
+  
+  export declare type BibleEditions = {
+    [edition in BibleEdition["short_name"]]: BibleBook[]
+  }
+  
+  export declare type BibleChapterVerses = BibleChapterVerse[];
 }
-
-declare interface BSingleVerse extends BVerse {
-  translation: string;
-  book: number;
-}
-
-declare interface BChapterVerse extends BVerse {
-  comment?: string;
-}
-
-declare interface BTranslation {
-  short_name: string
-  full_name: string
-  commentaries?: boolean
-  updated: number
-  info?: string
-  dir?: 'rtl' | 'ltr'
-}
-
-declare interface BLanguage {
-  language: string,
-  translations: BTranslation[]
-}
-
-declare interface BBook {
-  bookid: number
-  chronorder: number
-  name: string
-  chapter: number
-}
-
-declare type BLanguages = BLanguage[];
-
-declare type BBooks = {
-  [translation in BTranslation["short_name"]]: BBook[]
-}
-
-declare type BChapterVerses = BChapterVerse[];
 
 const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
   .reduce((numRanges: number[], entry) => {
@@ -66,10 +68,10 @@ const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
   static bBible = Promise.all([
-    fetch(TRANSLATIONS_ENDPOINT).then<BLanguages>(res => res.json()),
-    fetch(BOOKS_ENDPOINT).then<BBooks>(res => res.json())
+    fetch(TRANSLATIONS_ENDPOINT).then<BollsBible.BibleTranslations>(res => res.json()),
+    fetch(BOOKS_ENDPOINT).then<BollsBible.BibleEditions>(res => res.json())
   ]);
-  @state() private excerpt: BChapterVerses = [];
+  @state() private excerpt: BollsBible.BibleChapterVerses = [];
   @property({ type: Boolean }) selectTranslation: boolean = false;
   @property({ type: String }) translation: string = 'UBIO';
   @property({ type: String }) book: string = 'Буття';
@@ -77,20 +79,20 @@ export class BibleExcerpt extends LitElement {
   @property({ type: String }) verses: string = '';
   @property({ type: String }) hilightVerses: string = '';
 
-  private renderManualModeControls(langs: BLanguages) {
+  private renderManualModeControls(langs: BollsBible.BibleTranslations) {
     return html`<select id="translations" name="translations" @change=${(e: Event) => { let selector = e.target as HTMLSelectElement; this.translation = selector.value }}>
       ${langs.map(lang =>
-      lang.translations
-        .map(translation =>
+      lang.editions
+        .map(edition =>
           html`<option class="translation" 
-            value="${translation.short_name}" 
-            ?selected="${translation.short_name === this.translation}">
-              ${lang.language} --- ${translation.short_name} --- ${translation.full_name}
+            value="${edition.short_name}" 
+            ?selected="${edition.short_name === this.translation}">
+              ${lang.language} --- ${edition.short_name} --- ${edition.full_name}
             </option>`))}
   </select>`
   }
 
-  private bChapterVerse(verse: BChapterVerse, hilight = false) {
+  private bChapterVerse(verse: BollsBible.BibleChapterVerse, hilight = false) {
     return html`<input type=radio name="note" id="verse${verse.verse}" class="note" />
     <label for="verse${verse.verse}">
       <p 
@@ -111,7 +113,7 @@ export class BibleExcerpt extends LitElement {
     </label>`
   }
 
-  private bExcerpt(chapter: BChapterVerses, verses: string, hilight: string = '') {
+  private bExcerpt(chapter: BollsBible.BibleChapterVerses, verses: string, hilight: string = '') {
     let hilighted = spreadNumbers(hilight);
     return spreadNumbers(verses ? verses : "1-", chapter.length)
       .map(vnum => chapter[vnum - 1]).filter(v => v)
@@ -135,7 +137,7 @@ export class BibleExcerpt extends LitElement {
                   headers: { 'Content-Type': 'application/json', }
                 }
               )
-                .then<BChapterVerses>((res) => res.json())
+                .then<BollsBible.BibleChapterVerses>((res) => res.json())
                 .then(verses => {
                   this.excerpt = verses;
                 })
