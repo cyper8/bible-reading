@@ -10,12 +10,11 @@
     }
   },
   "scripts": {
-    "start": "vite",
-    "build": "vite build"
+    "build": "tsc -b"
   },
   "dependencies": {
-    "@cyper8/bible-excerpt": "workspace:*",
-    "@cyper8/bible-reading-calendar": "workspace:*"
+    "@cyper8/bible-excerpt": "*",
+    "@cyper8/bible-reading-calendar": "*"
   },
   "peerDependencies": {
     "lit": "^3.2.1",

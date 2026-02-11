@@ -2,9 +2,13 @@
   "name": "bible-excerpt",
   "private": true,
   "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "build": "pnpm -r build",
-    "dev": "pnpm --filter @cyper8/demo dev"
+    "build": "tsc -b",
+    "dev": "pnpm --filter bible-excerpt-demo dev"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

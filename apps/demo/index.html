@@ -7,6 +7,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Lit + TS</title>
     <link rel="stylesheet" href="./index.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://cdn.jsdelivr.net",
+          "lit/": "https://cdn.jsdelivr.net"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
     <script type="module" src="../../packages/bible-reading/src/bible-reading.js"></script>
   </head>
 
