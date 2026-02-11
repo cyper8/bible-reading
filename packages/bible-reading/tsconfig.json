@@ -6,8 +6,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "rootDir": "src",
-    "outDir": "dist",
     "composite": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [
+    {"path": "../bible-excerpt"},
+    {"path": "../bible-reading-calendar"}
+  ]
 }

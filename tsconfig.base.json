@@ -8,11 +8,16 @@
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
-
+    "composite": true,
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
-  }
+  },
+  "references": [
+    {"path": "./packages/bible-excerpt"},
+    {"path": "./packages/bible-reading"},
+    {"path": "./packages/bible-reading-calendar"}
+  ]
 }

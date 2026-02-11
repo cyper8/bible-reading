@@ -4,8 +4,7 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { marked } from "marked";
 import "../../bible-reading-calendar/src/bible-reading-calendar.js";
 import "../../bible-excerpt/src/bible-excerpt.js";
-import { BibleReadingCalendar, ReadingDateSelectedEvent } from "@cyper8/bible-reading-calendar";
-import { BibleExcerpt } from "@cyper8/bible-excerpt";
+import { ReadingDateSelectedEvent } from "../../bible-reading-calendar/src/bible-reading-calendar.js";
 
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
