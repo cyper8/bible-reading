@@ -1,1 +1,1 @@
-export {BibleExcerpt, BollsBible} from "./src/bible-excerpt"
+export {BibleExcerpt, BollsBible} from "./src/bible-excerpt.js"

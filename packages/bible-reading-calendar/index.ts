@@ -1,1 +1,1 @@
-export {BibleReadingCalendar, ReadingDateSelectedEvent, ReadingData} from "./src/bible-reading-calendar"
+export {BibleReadingCalendar, ReadingDateSelectedEvent, ReadingData} from "./src/bible-reading-calendar.js"

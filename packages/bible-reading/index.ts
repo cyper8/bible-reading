@@ -1,1 +1,1 @@
-export {BibleReading} from "./src/bible-reading"
+export {BibleReading} from "./src/bible-reading.js"

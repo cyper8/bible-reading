@@ -1,1 +1,1 @@
-export { BibleExcerpt } from "./src/bible-excerpt";
+export { BibleExcerpt } from "./src/bible-excerpt.js";

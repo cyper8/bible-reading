@@ -1,14 +1,13 @@
 {
   "name": "bible-excerpt",
   "private": true,
-  "packageManager": "pnpm@9.0.0",
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
     "build": "tsc -b",
-    "dev": "pnpm --filter bible-excerpt-demo dev"
+    "start": "npm run start -w bible-excerpt-demo"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
