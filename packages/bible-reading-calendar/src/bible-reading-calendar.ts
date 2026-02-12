@@ -1,14 +1,15 @@
-import { LitElement, PropertyValueMap, TemplateResult, css, html } from "lit";
+import { LitElement, PropertyValueMap, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { styleMap } from "lit/directives/style-map.js";
 
-export declare interface ReadingData {
+export declare interface ReadingDay {
   date: Date;
   reading: string;
+  questions: string;
 }
 
-export declare type ReadingDateSelectedEvent = CustomEvent<ReadingData> & {
+export declare type ReadingDateSelectedEvent = CustomEvent<ReadingDay> & {
   type: 'reading-date-selected'
 }
 
@@ -23,60 +24,11 @@ const daysInMonth = (m0: number, y?: number) => {
 @customElement('bible-reading-calendar')
 export class BibleReadingCalendar extends LitElement {
 
-  @state() monthReading: string[][] = [];
   @state() currentReadingDate?: Date;
+  @property({ type: Array }) monthReading: ReadingDay[] = [];
   @property({ type: Date }) date: Date = new Date();
 
-  async fetchDataFor(thedate: Date): Promise<string[][]> {
-    var readingData: string[][] = [],
-      reportedFlag: boolean = false,
-      theyear = thedate.getFullYear(),
-      themonth = thedate.getMonth(),
-      theday = thedate.getDate(),
-      year = theyear,
-      month = themonth;
-
-    for (; year > theyear - 1; year--) {
-      if (reportedFlag) break;
-      for (; month >= 0; month--) {
-        if (reportedFlag) break;
-        readingData[month] = [];
-        var day = (month < themonth || year < theyear) ? daysInMonth(month, year) : theday;
-        for (; day > 0; day--) {
-          await fetch(
-            `./${year}/${month + 1}/${day}.md`,
-            {
-              method: 'GET',
-              redirect: 'error',
-              headers: {
-                'Content-Type': 'text/markdown',
-                'Accept': 'text/markdown'
-              }
-            }
-          ).then(res => {
-            if (res.ok) {
-              return res.text()
-            } else return ''
-          })
-            .then(rData => {
-              readingData[month][day - 1] = rData;
-              if (rData && !reportedFlag) {
-                reportedFlag = true;
-                this.currentReadingDate = new Date(year, month, day);
-                this.reportData({
-                  date: this.currentReadingDate,
-                  reading: rData
-                })
-              }
-            });
-
-        }
-      }
-    }
-    return readingData
-  }
-
-  private genMonth(data: string[][], currentReadingDate: Date = new Date()) {
+  private genMonth(data: ReadingDay[], currentReadingDate: Date = new Date()) {
     const week = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
     let month = currentReadingDate.getMonth();
     let year = currentReadingDate.getFullYear();
@@ -84,7 +36,7 @@ export class BibleReadingCalendar extends LitElement {
     let day1 = new Date(year, month, 1);
     let offset = (day1.getDay() + 7 - 1) % 7 || 7;
     let length = daysInMonth(month, year);
-    let monthData = (data[month] || []);
+    let monthData = data;
     let gen = ['prev', ...(monthData.concat(Array(length - monthData.length).fill(''))), 'next'];
     return html`<section class="calendar">
       ${week.map(d => html`<div class="day header">${d}</div>`)}
@@ -109,16 +61,16 @@ export class BibleReadingCalendar extends LitElement {
             if (rewd) this.date = new Date(year, month, 0)
             else if (ffwd) this.date = new Date(year, month + 2, 0)
             else if (!today) this.reportData({
+              ...d as ReadingDay,                                                       // TOBEFIXED !!!
               date: this.currentReadingDate = new Date(year, month, n),
-              reading: d
             });
           }}">${n}</div>`
       }
     )}</section>`
   }
 
-  private reportData(reading: ReadingData) {
-    this.dispatchEvent(new CustomEvent<ReadingData>('reading-date-selected', {
+  private reportData(reading: ReadingDay) {
+    this.dispatchEvent(new CustomEvent<ReadingDay>('reading-date-selected', {
       detail: reading,
       bubbles: true,
       composed: true
@@ -127,11 +79,13 @@ export class BibleReadingCalendar extends LitElement {
 
   protected updated(_changedProperties: PropertyValueMap<this> | Map<PropertyKey, unknown>): void {
     if (_changedProperties.has("date")) {
-      this.fetchDataFor(this.date).then((res) => {
-        if (res) {
-          this.monthReading = res
-        }
-      })
+      // get Reading data for month
+ 
+      // this.fetchDataFor(this.date).then((res) => {
+      //   if (res) {
+      //     this.monthReading = res
+      //   }
+      // })
     }
   }
 
