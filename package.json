@@ -1,5 +1,5 @@
 {
-  "name": "bible-excerpt",
+  "name": "bible-reading",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "start": "npm run start -w bible-excerpt-demo"
+    "start": "npm run start -w bible-reading-demo"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
