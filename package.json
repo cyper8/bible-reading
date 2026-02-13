@@ -1,9 +1,9 @@
 {
-  "name": "bible-excerpt",
+  "name": "bible-reading",
   "version": "0.0.3",
   "type": "module",
-  "main": "./dist/bible-excerpt.js",
-  "exports": "./dist/bible-excerpt.js",
+  "main": "./dist/bible-reading.js",
+  "exports": "./dist/bible-reading.js",
   "scripts": {
     "start": "vite",
     "build": "tsc"
