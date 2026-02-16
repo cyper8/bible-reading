@@ -2,9 +2,9 @@ import { LitElement, PropertyValueMap, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { marked } from "marked";
-import "../../bible-reading-calendar/src/bible-reading-calendar.js";
-import "../../bible-excerpt/src/bible-excerpt.js";
-import { ReadingDateSelectedEvent } from "../../bible-reading-calendar/src/bible-reading-calendar.js";
+import "../../bible-excerpt/index.js";
+import "../../bible-reading-calendar/index.js";
+import { ReadingDateSelectedEvent } from "../../bible-reading-calendar/index.js";
 
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt

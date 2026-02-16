@@ -3,14 +3,9 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "@cyper8/bible-excerpt": "file:../../packages/bible-excerpt/index.js",
-        "@cyper8/bible-reading": "file:../../packages/bible-reading/index.js",
-        "@cyper8/bible-reading-calendar": "file:../../packages/bible-reading-calendar/index.js"
+        "@cyper8/bible-reading": "file:../../packages/bible-reading/index.js"
     },
-    "peerDependencies": {
-        "lit": "^3.2.1",
-        "marked": "^17.0.0"
-    },
+    
     "scripts": {
         "start": "vite --debug"
     },

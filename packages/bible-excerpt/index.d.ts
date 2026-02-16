@@ -1,2 +1,2 @@
-export { BibleExcerpt, BollsBible } from "./src/bible-excerpt.js";
+export { BibleExcerpt, type BollsBible } from "./src/bible-excerpt.js";
 //# sourceMappingURL=index.d.ts.map

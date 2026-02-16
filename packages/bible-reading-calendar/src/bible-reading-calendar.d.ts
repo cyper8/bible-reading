@@ -1,16 +1,16 @@
 import { LitElement, PropertyValueMap } from "lit";
-export declare interface ReadingData {
+export declare interface ReadingDay {
     date: Date;
     reading: string;
+    questions: string;
 }
-export declare type ReadingDateSelectedEvent = CustomEvent<ReadingData> & {
+export declare type ReadingDateSelectedEvent = CustomEvent<ReadingDay> & {
     type: 'reading-date-selected';
 };
 export declare class BibleReadingCalendar extends LitElement {
-    monthReading: string[][];
     currentReadingDate?: Date;
+    monthReading: ReadingDay[];
     date: Date;
-    fetchDataFor(thedate: Date): Promise<string[][]>;
     private genMonth;
     private reportData;
     protected updated(_changedProperties: PropertyValueMap<this> | Map<PropertyKey, unknown>): void;

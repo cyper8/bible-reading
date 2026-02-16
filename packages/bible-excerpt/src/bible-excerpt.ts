@@ -8,23 +8,23 @@ const TRANSLATIONS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/languag
 const BOOKS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/translations_books.json';
 
 export namespace BollsBible {
-  export declare interface BibleVerse {
+  export declare interface Verse {
     pk: number;
     chapter: number;
     verse: number;
     text: string;
   }
   
-  export declare interface BibleSingleVerse extends BibleVerse {
+  export declare interface SingleVerse extends Verse {
     translation: string;
     book: number;
   }
   
-  export declare interface BibleChapterVerse extends BibleVerse {
+  export declare interface ChapterVerse extends Verse {
     comment?: string;
   }
   
-  export declare interface BibleEdition {
+  export declare interface Edition {
     short_name: string
     full_name: string
     commentaries?: boolean
@@ -33,25 +33,25 @@ export namespace BollsBible {
     dir?: 'rtl' | 'ltr'
   }
   
-  export declare interface BibleTranslation {
+  export declare interface Translation {
     language: string,
-    editions: BibleEdition[]
+    editions: Edition[]
   }
   
-  export declare interface BibleBook {
+  export declare interface Book {
     bookid: number
     chronorder: number
     name: string
     chapter: number
   }
   
-  export declare type BibleTranslations = BibleTranslation[];
+  export declare type Translations = Translation[];
   
-  export declare type BibleEditions = {
-    [edition in BibleEdition["short_name"]]: BibleBook[]
+  export declare type EditionBooks = {
+    [edition in Edition["short_name"]]: Book[]
   }
   
-  export declare type BibleChapterVerses = BibleChapterVerse[];
+  export declare type ChapterVerses = ChapterVerse[];
 }
 
 const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
@@ -68,10 +68,10 @@ const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
   static bBible = Promise.all([
-    fetch(TRANSLATIONS_ENDPOINT).then<BollsBible.BibleTranslations>(res => res.json()),
-    fetch(BOOKS_ENDPOINT).then<BollsBible.BibleEditions>(res => res.json())
+    fetch(TRANSLATIONS_ENDPOINT).then<BollsBible.Translations>(res => res.json()),
+    fetch(BOOKS_ENDPOINT).then<BollsBible.EditionBooks>(res => res.json())
   ]);
-  @state() private excerpt: BollsBible.BibleChapterVerses = [];
+  @state() private excerpt: BollsBible.ChapterVerses = [];
   @property({ type: Boolean }) selectTranslation: boolean = false;
   @property({ type: String }) translation: string = 'UBIO';
   @property({ type: String }) book: string = 'Буття';
@@ -79,7 +79,7 @@ export class BibleExcerpt extends LitElement {
   @property({ type: String }) verses: string = '';
   @property({ type: String }) hilightVerses: string = '';
 
-  private renderManualModeControls(langs: BollsBible.BibleTranslations) {
+  private renderManualModeControls(langs: BollsBible.Translations) {
     return html`<select id="translations" name="translations" @change=${(e: Event) => { let selector = e.target as HTMLSelectElement; this.translation = selector.value }}>
       ${langs.map(lang =>
       lang.editions
@@ -92,7 +92,7 @@ export class BibleExcerpt extends LitElement {
   </select>`
   }
 
-  private bChapterVerse(verse: BollsBible.BibleChapterVerse, hilight = false) {
+  private bChapterVerse(verse: BollsBible.ChapterVerse, hilight = false) {
     return html`<input type=radio name="note" id="verse${verse.verse}" class="note" />
     <label for="verse${verse.verse}">
       <p 
@@ -113,7 +113,7 @@ export class BibleExcerpt extends LitElement {
     </label>`
   }
 
-  private bExcerpt(chapter: BollsBible.BibleChapterVerses, verses: string, hilight: string = '') {
+  private bExcerpt(chapter: BollsBible.ChapterVerses, verses: string, hilight: string = '') {
     let hilighted = spreadNumbers(hilight);
     return spreadNumbers(verses ? verses : "1-", chapter.length)
       .map(vnum => chapter[vnum - 1]).filter(v => v)
@@ -137,7 +137,7 @@ export class BibleExcerpt extends LitElement {
                   headers: { 'Content-Type': 'application/json', }
                 }
               )
-                .then<BollsBible.BibleChapterVerses>((res) => res.json())
+                .then<BollsBible.ChapterVerses>((res) => res.json())
                 .then(verses => {
                   this.excerpt = verses;
                 })

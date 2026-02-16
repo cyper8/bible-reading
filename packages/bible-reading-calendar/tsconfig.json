@@ -6,7 +6,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "rootDir": "src"
+    "rootDir": "."
   },
-  "include": ["src"]
+  "include": [".","src"]
 }

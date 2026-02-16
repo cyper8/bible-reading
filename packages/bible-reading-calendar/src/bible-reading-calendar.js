@@ -21,47 +21,6 @@ let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
         this.monthReading = [];
         this.date = new Date();
     }
-    async fetchDataFor(thedate) {
-        var readingData = [], reportedFlag = false, theyear = thedate.getFullYear(), themonth = thedate.getMonth(), theday = thedate.getDate(), year = theyear, month = themonth;
-        for (; year > theyear - 1; year--) {
-            if (reportedFlag)
-                break;
-            for (; month >= 0; month--) {
-                if (reportedFlag)
-                    break;
-                readingData[month] = [];
-                var day = (month < themonth || year < theyear) ? daysInMonth(month, year) : theday;
-                for (; day > 0; day--) {
-                    await fetch(`./${year}/${month + 1}/${day}.md`, {
-                        method: 'GET',
-                        redirect: 'error',
-                        headers: {
-                            'Content-Type': 'text/markdown',
-                            'Accept': 'text/markdown'
-                        }
-                    }).then(res => {
-                        if (res.ok) {
-                            return res.text();
-                        }
-                        else
-                            return '';
-                    })
-                        .then(rData => {
-                        readingData[month][day - 1] = rData;
-                        if (rData && !reportedFlag) {
-                            reportedFlag = true;
-                            this.currentReadingDate = new Date(year, month, day);
-                            this.reportData({
-                                date: this.currentReadingDate,
-                                reading: rData
-                            });
-                        }
-                    });
-                }
-            }
-        }
-        return readingData;
-    }
     genMonth(data, currentReadingDate = new Date()) {
         const week = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
         let month = currentReadingDate.getMonth();
@@ -70,7 +29,7 @@ let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
         let day1 = new Date(year, month, 1);
         let offset = (day1.getDay() + 7 - 1) % 7 || 7;
         let length = daysInMonth(month, year);
-        let monthData = (data[month] || []);
+        let monthData = data;
         let gen = ['prev', ...(monthData.concat(Array(length - monthData.length).fill(''))), 'next'];
         return html `<section class="calendar">
       ${week.map(d => html `<div class="day header">${d}</div>`)}
@@ -97,8 +56,8 @@ let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
                     this.date = new Date(year, month + 2, 0);
                 else if (!today)
                     this.reportData({
+                        ...d, // TOBEFIXED !!!
                         date: this.currentReadingDate = new Date(year, month, n),
-                        reading: d
                     });
             }}">${n}</div>`;
         })}</section>`;
@@ -112,11 +71,12 @@ let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
     }
     updated(_changedProperties) {
         if (_changedProperties.has("date")) {
-            this.fetchDataFor(this.date).then((res) => {
-                if (res) {
-                    this.monthReading = res;
-                }
-            });
+            // get Reading data for month
+            // this.fetchDataFor(this.date).then((res) => {
+            //   if (res) {
+            //     this.monthReading = res
+            //   }
+            // })
         }
     }
     render() {
@@ -223,10 +183,10 @@ let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
 };
 __decorate([
     state()
-], BibleReadingCalendar.prototype, "monthReading", void 0);
-__decorate([
-    state()
 ], BibleReadingCalendar.prototype, "currentReadingDate", void 0);
+__decorate([
+    property({ type: Array })
+], BibleReadingCalendar.prototype, "monthReading", void 0);
 __decorate([
     property({ type: Date })
 ], BibleReadingCalendar.prototype, "date", void 0);

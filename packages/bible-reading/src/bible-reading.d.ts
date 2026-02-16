@@ -1,6 +1,6 @@
 import { LitElement, PropertyValueMap } from "lit";
-import "../../bible-reading-calendar/src/bible-reading-calendar.js";
-import "../../bible-excerpt/src/bible-excerpt.js";
+import "../../bible-excerpt/index.js";
+import "../../bible-reading-calendar/index.js";
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
  * and presents the excerpt itself with some extra utility stuff like hilighting

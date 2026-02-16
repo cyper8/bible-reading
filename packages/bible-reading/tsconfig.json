@@ -5,12 +5,12 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "rootDir": "src",
+    "rootDir": ".",
     "composite": true
   },
-  "include": ["src"],
+  "include": [".","src"],
   "references": [
-    {"path": "../bible-excerpt"},
-    {"path": "../bible-reading-calendar"}
+    {"path": "../bible-excerpt/tsconfig.json"},
+    {"path": "../bible-reading-calendar/tsconfig.json"}
   ]
 }

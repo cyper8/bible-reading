@@ -18,8 +18,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "references": [
-    {"path": "./packages/bible-excerpt"},
-    {"path": "./packages/bible-reading"},
-    {"path": "./packages/bible-reading-calendar"}
+    {"path": "./packages/bible-excerpt/tsconfig.json"},
+    {"path": "./packages/bible-reading/tsconfig.json"},
+    {"path": "./packages/bible-reading-calendar/tsconfig.json"}
   ]
 }
