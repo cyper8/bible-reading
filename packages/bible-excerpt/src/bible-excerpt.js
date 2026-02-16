@@ -4,14 +4,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var BibleExcerpt_1;
 import { LitElement, css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { until } from 'lit/directives/until.js';
-const TRANSLATIONS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/languages.json';
-const BOOKS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/translations_books.json';
+import { BollsBibleController } from './BollsBibleController.js';
 const spreadNumbers = (numlist, length) => numlist.split(',')
     .reduce((numRanges, entry) => {
     let boundaries = entry.trim().split('-');
@@ -22,10 +19,11 @@ const spreadNumbers = (numlist, length) => numlist.split(',')
     }
     return numRanges;
 }, []);
-let BibleExcerpt = BibleExcerpt_1 = class BibleExcerpt extends LitElement {
+let BibleExcerpt = class BibleExcerpt extends LitElement {
     constructor() {
         super(...arguments);
         this.excerpt = [];
+        this.bible = new BollsBibleController(this);
         this.selectTranslation = false;
         this.translation = 'UBIO';
         this.book = 'Буття';
@@ -33,7 +31,7 @@ let BibleExcerpt = BibleExcerpt_1 = class BibleExcerpt extends LitElement {
         this.verses = '';
         this.hilightVerses = '';
     }
-    renderManualModeControls(langs) {
+    translationSelector(langs) {
         return html `<select id="translations" name="translations" @change=${(e) => { let selector = e.target; this.translation = selector.value; }}>
       ${langs.map(lang => lang.editions
             .map(edition => html `<option class="translation" 
@@ -73,39 +71,26 @@ let BibleExcerpt = BibleExcerpt_1 = class BibleExcerpt extends LitElement {
         if (_changedProperties.has("book")
             || _changedProperties.has("chapter")
             || _changedProperties.has("verses")) {
-            BibleExcerpt_1.bBible
-                .then(([_langs, books]) => {
-                if (this.translation in books) {
-                    let booknum = books[this.translation].findIndex(book => book.name === this.book) + 1;
-                    if (booknum)
-                        return fetch(`https://bolls.life/get-chapter/${this.translation}/${booknum}/${this.chapter}/`, {
-                            method: 'GET',
-                            mode: 'cors',
-                            headers: { 'Content-Type': 'application/json', }
-                        })
-                            .then((res) => res.json())
-                            .then(verses => {
-                            this.excerpt = verses;
-                        });
-                    else
-                        throw new Error(`помилка запиту`);
-                }
+            if (this.translation in this.bible.editions) {
+                let booknum = this.bible.editions[this.translation].findIndex(book => book.name === this.book) + 1;
+                if (booknum)
+                    this.bible.getChapter(this.translation, booknum, parseInt(this.chapter))
+                        .then(verses => {
+                        this.excerpt = verses;
+                    });
                 else
-                    throw new Error(`Помилка: перекладу не знайдено`);
-            })
-                .catch(console.error);
+                    throw new Error(`помилка запиту`);
+            }
+            else
+                throw new Error(`Помилка: перекладу не знайдено`);
         }
     }
     render() {
         return html `<h1>${this.book} ${this.chapter}${this.verses ? `:${this.verses}` : ''}</h1>
-    ${until(BibleExcerpt_1.bBible.then(([langs, _books]) => html `${this.selectTranslation ? this.renderManualModeControls(langs) : nothing}`), nothing)}
+    ${this.selectTranslation ? this.translationSelector(this.bible.translations) : nothing}
     ${this.bExcerpt(this.excerpt, this.verses, this.hilightVerses)}`;
     }
 };
-BibleExcerpt.bBible = Promise.all([
-    fetch(TRANSLATIONS_ENDPOINT).then(res => res.json()),
-    fetch(BOOKS_ENDPOINT).then(res => res.json())
-]);
 BibleExcerpt.styles = css `
   * {box-sizing: border-box}
   :host {
@@ -171,7 +156,7 @@ __decorate([
 __decorate([
     property({ type: String })
 ], BibleExcerpt.prototype, "hilightVerses", void 0);
-BibleExcerpt = BibleExcerpt_1 = __decorate([
+BibleExcerpt = __decorate([
     customElement('bible-excerpt')
 ], BibleExcerpt);
 export { BibleExcerpt };

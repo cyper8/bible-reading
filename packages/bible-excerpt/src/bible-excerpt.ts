@@ -2,57 +2,7 @@ import { LitElement, PropertyValueMap, css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { until } from 'lit/directives/until.js';
-
-const TRANSLATIONS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/languages.json';
-const BOOKS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/translations_books.json';
-
-export namespace BollsBible {
-  export declare interface Verse {
-    pk: number;
-    chapter: number;
-    verse: number;
-    text: string;
-  }
-  
-  export declare interface SingleVerse extends Verse {
-    translation: string;
-    book: number;
-  }
-  
-  export declare interface ChapterVerse extends Verse {
-    comment?: string;
-  }
-  
-  export declare interface Edition {
-    short_name: string
-    full_name: string
-    commentaries?: boolean
-    updated: number
-    info?: string
-    dir?: 'rtl' | 'ltr'
-  }
-  
-  export declare interface Translation {
-    language: string,
-    editions: Edition[]
-  }
-  
-  export declare interface Book {
-    bookid: number
-    chronorder: number
-    name: string
-    chapter: number
-  }
-  
-  export declare type Translations = Translation[];
-  
-  export declare type EditionBooks = {
-    [edition in Edition["short_name"]]: Book[]
-  }
-  
-  export declare type ChapterVerses = ChapterVerse[];
-}
+import { BollsBibleController, type BollsBible } from './BollsBibleController.js';
 
 const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
   .reduce((numRanges: number[], entry) => {
@@ -67,11 +17,11 @@ const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
 
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
-  static bBible = Promise.all([
-    fetch(TRANSLATIONS_ENDPOINT).then<BollsBible.Translations>(res => res.json()),
-    fetch(BOOKS_ENDPOINT).then<BollsBible.EditionBooks>(res => res.json())
-  ]);
+  
   @state() private excerpt: BollsBible.ChapterVerses = [];
+
+  bible = new BollsBibleController(this);
+
   @property({ type: Boolean }) selectTranslation: boolean = false;
   @property({ type: String }) translation: string = 'UBIO';
   @property({ type: String }) book: string = 'Буття';
@@ -79,7 +29,7 @@ export class BibleExcerpt extends LitElement {
   @property({ type: String }) verses: string = '';
   @property({ type: String }) hilightVerses: string = '';
 
-  private renderManualModeControls(langs: BollsBible.Translations) {
+  private translationSelector(langs: BollsBible.Translations) {
     return html`<select id="translations" name="translations" @change=${(e: Event) => { let selector = e.target as HTMLSelectElement; this.translation = selector.value }}>
       ${langs.map(lang =>
       lang.editions
@@ -124,36 +74,21 @@ export class BibleExcerpt extends LitElement {
     if (_changedProperties.has("book")
       || _changedProperties.has("chapter")
       || _changedProperties.has("verses")) {
-      BibleExcerpt.bBible
-        .then(([_langs, books]) => {
-          if (this.translation in books) {
-            let booknum = books[this.translation].findIndex(book => book.name === this.book) + 1;
-            if (booknum)
-              return fetch(
-                `https://bolls.life/get-chapter/${this.translation}/${booknum}/${this.chapter}/`,
-                {
-                  method: 'GET',
-                  mode: 'cors',
-                  headers: { 'Content-Type': 'application/json', }
-                }
-              )
-                .then<BollsBible.ChapterVerses>((res) => res.json())
-                .then(verses => {
-                  this.excerpt = verses;
-                })
-            else throw new Error(`помилка запиту`)
-          } else throw new Error(`Помилка: перекладу не знайдено`)
-        })
-        .catch(console.error);
+        if (this.translation in this.bible.editions) {
+          let booknum = this.bible.editions[this.translation].findIndex(book => book.name === this.book) + 1;
+          if (booknum)
+            this.bible.getChapter(this.translation, booknum, parseInt(this.chapter))
+              .then(verses => {
+                this.excerpt = verses;
+              })
+          else throw new Error(`помилка запиту`)
+        } else throw new Error(`Помилка: перекладу не знайдено`)
     }
   }
 
   render() {
     return html`<h1>${this.book} ${this.chapter}${this.verses ? `:${this.verses}` : ''}</h1>
-    ${until(
-      BibleExcerpt.bBible.then(([langs, _books]) =>
-        html`${this.selectTranslation ? this.renderManualModeControls(langs) : nothing}`),
-      nothing)}
+    ${this.selectTranslation ? this.translationSelector(this.bible.translations) : nothing}
     ${this.bExcerpt(this.excerpt, this.verses, this.hilightVerses)}`;
   }
 
