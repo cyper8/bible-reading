@@ -1,8 +1,9 @@
-import { LitElement, PropertyValueMap, css, html, nothing } from 'lit';
+import { LitElement, PropertyValues, css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { BollsBibleController, type BollsBible } from './BollsBibleController.js';
+import { BibleEditionSelector } from './bible-edition-selector.js';
 
 const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
   .reduce((numRanges: number[], entry) => {
@@ -30,16 +31,24 @@ export class BibleExcerpt extends LitElement {
   @property({ type: String }) hilightVerses: string = '';
 
   private translationSelector(langs: BollsBible.Translations) {
-    return html`<select id="translations" name="translations" @change=${(e: Event) => { let selector = e.target as HTMLSelectElement; this.translation = selector.value }}>
-      ${langs.map(lang =>
-      lang.editions
-        .map(edition =>
-          html`<option class="translation" 
-            value="${edition.short_name}" 
-            ?selected="${edition.short_name === this.translation}">
-              ${lang.language} --- ${edition.short_name} --- ${edition.full_name}
-            </option>`))}
-  </select>`
+    import('./bible-edition-selector.js');
+    return html`<bible-edition-selector 
+    .translations=${langs}
+    .selectedLanguage=${
+      this.translation 
+      ? langs
+        .find(lang => 
+          lang.editions
+          .map(ed => ed.short_name)
+          .includes(this.translation)
+        )?.language || '' 
+      : ''}
+    .selectedEdition=${this.translation} 
+    @change=${
+      (event: Event) => {
+        let t = event.target as BibleEditionSelector; 
+        this.translation = t.selectedEdition
+      }}></bible-edition-selector>`
   }
 
   private bChapterVerse(verse: BollsBible.ChapterVerse, hilight = false) {
@@ -70,8 +79,9 @@ export class BibleExcerpt extends LitElement {
       .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
   }
 
-  protected willUpdate(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
-    if (_changedProperties.has("book")
+  protected willUpdate(_changedProperties: Map<PropertyKey, PropertyValues<this>>): void {
+    if (_changedProperties.has("translation")
+      || _changedProperties.has("book")
       || _changedProperties.has("chapter")
       || _changedProperties.has("verses")) {
         if (this.translation in this.bible.editions) {
