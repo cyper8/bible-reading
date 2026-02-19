@@ -10,6 +10,7 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { marked } from "marked";
 import "../../bible-excerpt/index.js";
 import "../../bible-reading-calendar/index.js";
+import { ReadingController } from "./ReadingController.js";
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
  * and presents the excerpt itself with some extra utility stuff like hilighting
@@ -23,6 +24,7 @@ import "../../bible-reading-calendar/index.js";
 let BibleReading = class BibleReading extends LitElement {
     constructor() {
         super(...arguments);
+        this.reading = new ReadingController(this);
         this.book = '';
         this.chapter = '';
         this.verses = '';

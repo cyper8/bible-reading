@@ -1,6 +1,7 @@
 import { LitElement, PropertyValueMap } from "lit";
 import "../../bible-excerpt/index.js";
 import "../../bible-reading-calendar/index.js";
+import { ReadingController } from "./ReadingController.js";
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
  * and presents the excerpt itself with some extra utility stuff like hilighting
@@ -12,6 +13,7 @@ import "../../bible-reading-calendar/index.js";
  * @extends {LitElement}
  */
 export declare class BibleReading extends LitElement {
+    reading: ReadingController;
     book: string;
     chapter: string;
     verses: string;

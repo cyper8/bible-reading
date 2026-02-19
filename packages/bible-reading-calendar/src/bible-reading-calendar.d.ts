@@ -3,6 +3,7 @@ export declare interface ReadingDay {
     date: Date;
     reading: string;
     questions: string;
+    exposition: string;
 }
 export declare type ReadingDateSelectedEvent = CustomEvent<ReadingDay> & {
     type: 'reading-date-selected';

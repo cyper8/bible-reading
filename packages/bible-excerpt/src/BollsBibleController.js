@@ -1,17 +1,16 @@
 var _a;
-const TRANSLATIONS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/languages.json';
-const BOOKS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/translations_books.json';
+const TRANSLATIONS_ENDPOINT = '/bolls/static/bolls/app/views/languages.json';
+const BOOKS_ENDPOINT = '/bolls/static/bolls/app/views/translations_books.json';
 export class BollsBibleController {
     static fetchBolls(endpoint, init) {
         return fetch(endpoint, {
             method: 'GET',
             ...init,
-            mode: 'cors',
             headers: { 'Content-Type': 'application/json', }
         });
     }
     async getChapter(editionName, bookNum, chapter) {
-        return _a.fetchBolls(`https://bolls.life/get-chapter/${editionName}/${bookNum}/${chapter}/`).then(response => response.json());
+        return _a.fetchBolls(`/bolls/get-chapter/${editionName}/${bookNum}/${chapter}/`, { mode: 'cors' }).then(response => response.json());
     }
     constructor(host) {
         this.translations = [];

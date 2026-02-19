@@ -5,6 +5,7 @@ import { marked } from "marked";
 import "../../bible-excerpt/index.js";
 import "../../bible-reading-calendar/index.js";
 import { ReadingDateSelectedEvent } from "../../bible-reading-calendar/index.js";
+import { ReadingController } from "./ReadingController.js";
 
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
@@ -18,6 +19,8 @@ import { ReadingDateSelectedEvent } from "../../bible-reading-calendar/index.js"
  */
 @customElement('bible-reading')
 export class BibleReading extends LitElement {
+
+  reading = new ReadingController(this);
 
   @state() book: string = '';
   @state() chapter: string = '';

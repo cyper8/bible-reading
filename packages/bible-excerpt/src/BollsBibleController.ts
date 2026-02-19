@@ -1,6 +1,6 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
-const TRANSLATIONS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/languages.json';
-const BOOKS_ENDPOINT = 'https://bolls.life/static/bolls/app/views/translations_books.json';
+const TRANSLATIONS_ENDPOINT = '/bolls/static/bolls/app/views/languages.json';
+const BOOKS_ENDPOINT = '/bolls/static/bolls/app/views/translations_books.json';
 
 export namespace BollsBible {
   export declare interface Verse {
@@ -54,17 +54,16 @@ export class BollsBibleController implements ReactiveController {
     return fetch(endpoint, {
       method: 'GET',
       ...init,
-      mode: 'cors',
       headers: { 'Content-Type': 'application/json', }
     })
   }
 
   static translations: Promise<BollsBible.Translations> = this.fetchBolls(TRANSLATIONS_ENDPOINT).then<BollsBible.Translations>(resp => resp.json());
   static editions: Promise<BollsBible.EditionBooks> = this.fetchBolls(BOOKS_ENDPOINT).then<BollsBible.EditionBooks>(resp => resp.json());
-  
+
   async getChapter(editionName: string, bookNum: number, chapter: number): Promise<BollsBible.ChapterVerses> {
     return BollsBibleController.fetchBolls(
-      `https://bolls.life/get-chapter/${editionName}/${bookNum}/${chapter}/`,
+      `/bolls/get-chapter/${editionName}/${bookNum}/${chapter}/`, { mode: 'cors' }
     ).then<BollsBible.ChapterVerses>(response => response.json())
   }
 
@@ -74,24 +73,24 @@ export class BollsBibleController implements ReactiveController {
 
   constructor(host: ReactiveControllerHost) {
     this.host = host;
-    BollsBibleController.translations.then(translations => {this.translations = translations; this.host.requestUpdate()});
-    BollsBibleController.editions.then(editions => {this.editions = editions; this.host.requestUpdate()});
+    BollsBibleController.translations.then(translations => { this.translations = translations; this.host.requestUpdate() });
+    BollsBibleController.editions.then(editions => { this.editions = editions; this.host.requestUpdate() });
   }
 
   hostConnected(): void {
-    
+
   }
 
   hostDisconnected(): void {
-    
+
   }
 
   hostUpdate(): void {
-    
+
   }
 
   hostUpdated(): void {
-    
+
   }
 
 }

@@ -7,6 +7,7 @@ export declare interface ReadingDay {
   date: Date;
   reading: string;
   questions: string;
+  exposition: string;
 }
 
 export declare type ReadingDateSelectedEvent = CustomEvent<ReadingDay> & {
@@ -80,7 +81,7 @@ export class BibleReadingCalendar extends LitElement {
   protected updated(_changedProperties: PropertyValueMap<this> | Map<PropertyKey, unknown>): void {
     if (_changedProperties.has("date")) {
       // get Reading data for month
- 
+
       // this.fetchDataFor(this.date).then((res) => {
       //   if (res) {
       //     this.monthReading = res

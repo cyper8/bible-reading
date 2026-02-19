@@ -1,4 +1,4 @@
-import { LitElement, PropertyValueMap } from 'lit';
+import { LitElement, PropertyValues } from 'lit';
 import { BollsBibleController } from './BollsBibleController.js';
 export declare class BibleExcerpt extends LitElement {
     private excerpt;
@@ -12,7 +12,7 @@ export declare class BibleExcerpt extends LitElement {
     private translationSelector;
     private bChapterVerse;
     private bExcerpt;
-    protected willUpdate(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void;
+    protected willUpdate(_changedProperties: Map<PropertyKey, PropertyValues<this>>): void;
     render(): import("lit-html").TemplateResult<1>;
     static styles: import("lit").CSSResult;
 }

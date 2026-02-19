@@ -32,14 +32,20 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
         this.hilightVerses = '';
     }
     translationSelector(langs) {
-        return html `<select id="translations" name="translations" @change=${(e) => { let selector = e.target; this.translation = selector.value; }}>
-      ${langs.map(lang => lang.editions
-            .map(edition => html `<option class="translation" 
-            value="${edition.short_name}" 
-            ?selected="${edition.short_name === this.translation}">
-              ${lang.language} --- ${edition.short_name} --- ${edition.full_name}
-            </option>`))}
-  </select>`;
+        import('./bible-edition-selector.js');
+        return html `<bible-edition-selector 
+    .translations=${langs}
+    .selectedLanguage=${this.translation
+            ? langs
+                .find(lang => lang.editions
+                .map(ed => ed.short_name)
+                .includes(this.translation))?.language || ''
+            : ''}
+    .selectedEdition=${this.translation} 
+    @change=${(event) => {
+            let t = event.target;
+            this.translation = t.selectedEdition;
+        }}></bible-edition-selector>`;
     }
     bChapterVerse(verse, hilight = false) {
         return html `<input type=radio name="note" id="verse${verse.verse}" class="note" />
@@ -68,7 +74,8 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
             .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)));
     }
     willUpdate(_changedProperties) {
-        if (_changedProperties.has("book")
+        if (_changedProperties.has("translation")
+            || _changedProperties.has("book")
             || _changedProperties.has("chapter")
             || _changedProperties.has("verses")) {
             if (this.translation in this.bible.editions) {
