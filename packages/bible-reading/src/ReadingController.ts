@@ -20,13 +20,22 @@ export class ReadingController implements ReactiveController {
     this.getReading();
   }
 
+  static handleReadingData: Function | undefined;
+
   getReading() {
-    fetch(READING_SOURCE + "?date=" + this.today.toDateString())
-      .then<ReadingDay[]>(response => response.json())
-      .then(reading => {
-        this.reading = reading;
-        this.host.requestUpdate()
-      })
+    var script = document.createElement('script');
+    var nW: any = Object.defineProperty(window, "handleReadingData", {
+      value: (data: Array<ReadingDay>) => {
+        this.reading = data as ReadingDay[];
+        document.head.removeChild(script);
+        delete nW.handleReadingData;
+        this.host.requestUpdate();
+      },
+      enumerable: true,
+      configurable: true
+    });
+    script.src = READING_SOURCE + "?date=" + this.today.toDateString() + '&callback=window.handleReadingData';
+    document.head.appendChild(script);
   }
 
   hostConnected(): void { }

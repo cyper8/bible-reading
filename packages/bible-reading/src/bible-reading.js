@@ -93,7 +93,7 @@ let BibleReading = class BibleReading extends LitElement {
         }
     }
     render() {
-        return html `<bible-reading-calendar @reading-date-selected="${(event) => {
+        return html `<bible-reading-calendar .monthReading=${this.reading.reading} @reading-date-selected="${(event) => {
             this.content = event.detail.reading;
         }}"></bible-reading-calendar>${this.book && this.chapter
             ? html `

@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "start": "npm run start -w bible-reading-demo"
+    "start": "npm run build && npm run start -w bible-reading-demo"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

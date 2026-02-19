@@ -8,12 +8,19 @@ export class ReadingController {
         this.getReading();
     }
     getReading() {
-        fetch(READING_SOURCE + "?date=" + this.today.toDateString())
-            .then(response => response.json())
-            .then(reading => {
-            this.reading = reading;
-            this.host.requestUpdate();
+        var script = document.createElement('script');
+        var nW = Object.defineProperty(window, "handleReadingData", {
+            value: (data) => {
+                this.reading = data;
+                document.head.removeChild(script);
+                delete nW.handleReadingData;
+                this.host.requestUpdate();
+            },
+            enumerable: true,
+            configurable: true
         });
+        script.src = READING_SOURCE + "?date=" + this.today.toDateString() + '&callback=window.handleReadingData';
+        document.head.appendChild(script);
     }
     hostConnected() { }
     hostDisconnected() { }

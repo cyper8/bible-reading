@@ -10,6 +10,7 @@ export declare class ReadingController implements ReactiveController {
     reading: ReadingDay[];
     host: ReactiveControllerHost;
     constructor(host: ReactiveControllerHost);
+    static handleReadingData: Function | undefined;
     getReading(): void;
     hostConnected(): void;
     hostDisconnected(): void;
