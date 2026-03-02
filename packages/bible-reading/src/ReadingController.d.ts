@@ -1,17 +1,18 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
+export declare const stripHours: (date: Date) => Date;
 export declare interface ReadingDay {
     date: Date;
     reading: string;
     questions: string;
     exposition: string;
 }
+export type ReadingMonth = ReadingDay[];
 export declare class ReadingController implements ReactiveController {
-    today: Date;
-    reading: ReadingDay[];
     host: ReactiveControllerHost;
+    month: ReadingMonth;
+    day?: ReadingDay;
     constructor(host: ReactiveControllerHost);
-    static handleReadingData: Function | undefined;
-    getReading(): void;
+    setReadingDate(date: Date): Promise<void>;
     hostConnected(): void;
     hostDisconnected(): void;
     hostUpdate(): void;

@@ -1,4 +1,4 @@
-import { LitElement, PropertyValueMap } from "lit";
+import { LitElement } from "lit";
 export declare interface ReadingDay {
     date: Date;
     reading: string;
@@ -9,12 +9,10 @@ export declare type ReadingDateSelectedEvent = CustomEvent<ReadingDay> & {
     type: 'reading-date-selected';
 };
 export declare class BibleReadingCalendar extends LitElement {
-    currentReadingDate?: Date;
-    monthReading: ReadingDay[];
     date: Date;
+    reading: ReadingDay[];
     private genMonth;
     private reportData;
-    protected updated(_changedProperties: PropertyValueMap<this> | Map<PropertyKey, unknown>): void;
     protected render(): import("lit-html").TemplateResult<1>;
     static get styles(): import("lit").CSSResult;
 }

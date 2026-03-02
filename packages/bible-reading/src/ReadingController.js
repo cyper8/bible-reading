@@ -1,26 +1,18 @@
+import { getJSONP } from "../../utils/getJSONP.js";
 const READING_SOURCE = "/reading/json";
+export const stripHours = (date) => (date.setHours(0, 0, 0), date);
 export class ReadingController {
     constructor(host) {
-        this.today = new Date();
-        this.reading = [];
+        this.month = [];
         this.host = host;
-        this.today.setHours(0, 0, 0);
-        this.getReading();
     }
-    getReading() {
-        var script = document.createElement('script');
-        var nW = Object.defineProperty(window, "handleReadingData", {
-            value: (data) => {
-                this.reading = data;
-                document.head.removeChild(script);
-                delete nW.handleReadingData;
-                this.host.requestUpdate();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        script.src = READING_SOURCE + "?date=" + this.today.toDateString() + '&callback=window.handleReadingData';
-        document.head.appendChild(script);
+    async setReadingDate(date) {
+        const d = stripHours(date);
+        if (this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth())) {
+            this.month = await getJSONP(READING_SOURCE, `date=${date.toDateString()}`);
+        }
+        this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
+        this.host.requestUpdate();
     }
     hostConnected() { }
     hostDisconnected() { }

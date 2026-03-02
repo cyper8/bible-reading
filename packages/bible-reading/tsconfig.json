@@ -8,9 +8,20 @@
     "rootDir": ".",
     "composite": true
   },
-  "include": [".","src"],
+  "include": [
+    ".",
+    "src",
+    "../bible-excerpt/src/BibleController.ts"
+  ],
   "references": [
-    {"path": "../bible-excerpt/tsconfig.json"},
-    {"path": "../bible-reading-calendar/tsconfig.json"}
+    {
+      "path": "../bible-excerpt/tsconfig.json"
+    },
+    {
+      "path": "../bible-reading-calendar/tsconfig.json"
+    },
+    {
+      "path": "../utils/tsconfig.json"
+    }
   ]
 }

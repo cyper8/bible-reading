@@ -1,5 +1,5 @@
-import { LitElement, PropertyValueMap, css, html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { LitElement, css, html } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { styleMap } from "lit/directives/style-map.js";
 
@@ -25,9 +25,8 @@ const daysInMonth = (m0: number, y?: number) => {
 @customElement('bible-reading-calendar')
 export class BibleReadingCalendar extends LitElement {
 
-  @state() currentReadingDate?: Date;
-  @property({ type: Array }) monthReading: ReadingDay[] = [];
   @property({ type: Date }) date: Date = new Date();
+  @property({ type: Array }) reading: ReadingDay[] = [];
 
   private genMonth(data: ReadingDay[], currentReadingDate: Date = new Date()) {
     const week = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
@@ -38,11 +37,15 @@ export class BibleReadingCalendar extends LitElement {
     let offset = (day1.getDay() + 7 - 1) % 7 || 7;
     let length = daysInMonth(month, year);
     let monthData = data;
-    let gen = ['prev', ...(monthData.concat(Array(length - monthData.length).fill(''))), 'next'];
+    let gen: (ReadingDay | undefined)[] = Array(length + 2).fill(undefined);
+    monthData.forEach(day => {
+      gen[day.date.getDate()] = day
+    });
     return html`<section class="calendar">
       ${week.map(d => html`<div class="day header">${d}</div>`)}
       ${gen.map(
       (d, n, a) => {
+        let date = new Date(year, month, n);
         let dw = (n + offset - 1) % 7;
         let today = (n == theday);
         let ffwd = (n == a.length - 1);
@@ -51,7 +54,7 @@ export class BibleReadingCalendar extends LitElement {
           day: true,
           ffwd,
           rewd,
-          empty: (d == '' || ffwd || rewd),
+          empty: (d == undefined || ffwd || rewd),
           selected: today,
           weekend: dw > 4
         })}"
@@ -59,13 +62,18 @@ export class BibleReadingCalendar extends LitElement {
           'grid-column': `span ${rewd ? offset : (ffwd ? 7 - dw : 1)}`
         })}"
           @click="${() => {
-            if (rewd) this.date = new Date(year, month, 0)
-            else if (ffwd) this.date = new Date(year, month + 2, 0)
-            else if (!today) this.reportData({
-              ...d as ReadingDay,                                                       // TOBEFIXED !!!
-              date: this.currentReadingDate = new Date(year, month, n),
-            });
-          }}">${n}</div>`
+            if (!today) {
+              this.date = date;
+              this.reportData({
+                date,
+                reading: '',
+                questions: '',
+                exposition: '',
+                ...d
+              } as ReadingDay);
+            }
+          }
+          }">${n}</div>`
       }
     )}</section>`
   }
@@ -78,27 +86,21 @@ export class BibleReadingCalendar extends LitElement {
     }) as ReadingDateSelectedEvent)
   }
 
-  protected updated(_changedProperties: PropertyValueMap<this> | Map<PropertyKey, unknown>): void {
-    if (_changedProperties.has("date")) {
-      // get Reading data for month
+  // protected updated(_changedProperties: PropertyValueMap<this> | Map<PropertyKey, unknown>): void {
+  //   if (_changedProperties.has("date")) {
 
-      // this.fetchDataFor(this.date).then((res) => {
-      //   if (res) {
-      //     this.monthReading = res
-      //   }
-      // })
-    }
-  }
+  //   }
+  // }
 
   protected render() {
     return html`
     <label class="icon" id="clock" for="date-selector-switch">
-      ${(this.currentReadingDate || this.date).toLocaleDateString(
+      ${(this.date).toLocaleDateString(
       navigator.language,
       { dateStyle: 'long' }
     )}<input type=checkbox id="date-selector-switch" hidden />
       <div class="date-selector">
-        ${this.genMonth(this.monthReading, this.currentReadingDate)}
+        ${this.genMonth(this.reading, this.date)}
       </div>
     </label>
     

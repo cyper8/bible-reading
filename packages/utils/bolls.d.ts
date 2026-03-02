@@ -1,4 +1,6 @@
-import { ReactiveController, ReactiveControllerHost } from "lit";
+/** /bolls/ => https://bolls.life/ */
+export declare const BOLLS_TRANSLATIONS = "/bolls/static/bolls/app/views/languages.json";
+export declare const BOLLS_EDITIONSBOOKS = "/bolls/static/bolls/app/views/translations_books.json";
 export declare namespace BollsBible {
     interface Verse {
         pk: number;
@@ -37,18 +39,17 @@ export declare namespace BollsBible {
     };
     type ChapterVerses = ChapterVerse[];
 }
-export declare class BollsBibleController implements ReactiveController {
-    private static fetchBolls;
-    static translations: Promise<BollsBible.Translations>;
-    static editions: Promise<BollsBible.EditionBooks>;
-    getChapter(editionName: string, bookNum: number, chapter: number): Promise<BollsBible.ChapterVerses>;
-    host: ReactiveControllerHost;
-    translations: BollsBible.Translations;
-    editions: BollsBible.EditionBooks;
-    constructor(host: ReactiveControllerHost);
-    hostConnected(): void;
-    hostDisconnected(): void;
-    hostUpdate(): void;
-    hostUpdated(): void;
-}
-//# sourceMappingURL=BollsBibleController.d.ts.map
+export declare function fetchBollsTranslations(): Promise<BollsBible.Translations>;
+export declare function fetchBollsEditionBooks(): Promise<BollsBible.EditionBooks>;
+export declare function fetchBollsChapter({ edition, book, chapter }: {
+    edition: BollsBible.Edition['short_name'];
+    book: number;
+    chapter: number;
+}): Promise<BollsBible.ChapterVerses>;
+export declare function getBollsChapterUrl({ edition, book, chapter, verse }: {
+    edition: BollsBible.Edition['short_name'];
+    book: number;
+    chapter: number;
+    verse?: number;
+}): string;
+//# sourceMappingURL=bolls.d.ts.map

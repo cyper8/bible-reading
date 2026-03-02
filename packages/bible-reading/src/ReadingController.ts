@@ -1,6 +1,9 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
+import { getJSONP } from "../../utils/getJSONP.js";
 
 const READING_SOURCE = "/reading/json";
+
+export const stripHours = (date: Date) => (date.setHours(0, 0, 0), date);
 
 export declare interface ReadingDay {
   date: Date;
@@ -9,33 +12,26 @@ export declare interface ReadingDay {
   exposition: string;
 }
 
+export type ReadingMonth = ReadingDay[];
+
 export class ReadingController implements ReactiveController {
-  today: Date = new Date();
-  reading: ReadingDay[] = [];
 
   host: ReactiveControllerHost;
+
+  month: ReadingMonth = [];
+  day?: ReadingDay;
+
   constructor(host: ReactiveControllerHost) {
     this.host = host;
-    this.today.setHours(0, 0, 0);
-    this.getReading();
   }
 
-  static handleReadingData: Function | undefined;
-
-  getReading() {
-    var script = document.createElement('script');
-    var nW: any = Object.defineProperty(window, "handleReadingData", {
-      value: (data: Array<ReadingDay>) => {
-        this.reading = data as ReadingDay[];
-        document.head.removeChild(script);
-        delete nW.handleReadingData;
-        this.host.requestUpdate();
-      },
-      enumerable: true,
-      configurable: true
-    });
-    script.src = READING_SOURCE + "?date=" + this.today.toDateString() + '&callback=window.handleReadingData';
-    document.head.appendChild(script);
+  async setReadingDate(date: Date) {
+    const d = stripHours(date);
+    if (this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth())) {
+      this.month = await getJSONP<ReadingMonth>(READING_SOURCE, `date=${date.toDateString()}`);
+    }
+    this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
+    this.host.requestUpdate();
   }
 
   hostConnected(): void { }

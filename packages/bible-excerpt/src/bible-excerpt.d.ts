@@ -1,19 +1,13 @@
 import { LitElement, PropertyValues } from 'lit';
-import { BollsBibleController } from './BollsBibleController.js';
+import { BibleController } from './BibleController.js';
 export declare class BibleExcerpt extends LitElement {
-    private excerpt;
-    bible: BollsBibleController;
-    selectTranslation: boolean;
-    translation: string;
-    book: string;
-    chapter: string;
-    verses: string;
+    bible: BibleController;
     hilightVerses: string;
-    private translationSelector;
+    reference: string;
     private bChapterVerse;
     private bExcerpt;
-    protected willUpdate(_changedProperties: Map<PropertyKey, PropertyValues<this>>): void;
-    render(): import("lit-html").TemplateResult<1>;
+    protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void;
+    render(): import("lit-html").TemplateResult<1>[];
     static styles: import("lit").CSSResult;
 }
 declare global {

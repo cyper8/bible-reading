@@ -5,47 +5,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 import { LitElement, css, html, nothing } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { BollsBibleController } from './BollsBibleController.js';
-const spreadNumbers = (numlist, length) => numlist.split(',')
-    .reduce((numRanges, entry) => {
-    let boundaries = entry.trim().split('-');
-    let first = parseInt(boundaries[0]) || 1;
-    let last = parseInt(boundaries[boundaries.length - 1]) || length || first;
-    while (entry && first <= last) {
-        numRanges.push(first++);
-    }
-    return numRanges;
-}, []);
+import { getBollsChapterUrl } from '../../utils/bolls.js';
+import { spreadNumbers } from '../../utils/spreadNumbers.js';
+import { BibleController } from './BibleController.js';
 let BibleExcerpt = class BibleExcerpt extends LitElement {
     constructor() {
         super(...arguments);
-        this.excerpt = [];
-        this.bible = new BollsBibleController(this);
-        this.selectTranslation = false;
-        this.translation = 'UBIO';
-        this.book = 'Буття';
-        this.chapter = '3';
-        this.verses = '';
+        this.bible = new BibleController(this);
         this.hilightVerses = '';
-    }
-    translationSelector(langs) {
-        import('./bible-edition-selector.js');
-        return html `<bible-edition-selector 
-    .translations=${langs}
-    .selectedLanguage=${this.translation
-            ? langs
-                .find(lang => lang.editions
-                .map(ed => ed.short_name)
-                .includes(this.translation))?.language || ''
-            : ''}
-    .selectedEdition=${this.translation} 
-    @change=${(event) => {
-            let t = event.target;
-            this.translation = t.selectedEdition;
-        }}></bible-edition-selector>`;
+        this.reference = '';
     }
     bChapterVerse(verse, hilight = false) {
         return html `<input type=radio name="note" id="verse${verse.verse}" class="note" />
@@ -67,35 +38,22 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
       </p>
     </label>`;
     }
-    bExcerpt(chapter, verses, hilight = '') {
-        let hilighted = spreadNumbers(hilight);
-        return spreadNumbers(verses ? verses : "1-", chapter.length)
-            .map(vnum => chapter[vnum - 1]).filter(v => v)
-            .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)));
+    bExcerpt(excerpt, hilight = '') {
+        let hilighted = hilight ? spreadNumbers(hilight) : [];
+        let url = getBollsChapterUrl(excerpt);
+        return html `<div class="excerpt"><h3><a href=${url}>${excerpt.reference}</a></h3>
+    ${excerpt.verses
+            .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}</div>`;
     }
     willUpdate(_changedProperties) {
-        if (_changedProperties.has("translation")
-            || _changedProperties.has("book")
-            || _changedProperties.has("chapter")
-            || _changedProperties.has("verses")) {
-            if (this.translation in this.bible.editions) {
-                let booknum = this.bible.editions[this.translation].findIndex(book => book.name === this.book) + 1;
-                if (booknum)
-                    this.bible.getChapter(this.translation, booknum, parseInt(this.chapter))
-                        .then(verses => {
-                        this.excerpt = verses;
-                    });
-                else
-                    throw new Error(`помилка запиту`);
+        if (_changedProperties.has("reference")) {
+            if (this.reference !== this.bible.reference) {
+                this.bible.init(this.reference);
             }
-            else
-                throw new Error(`Помилка: перекладу не знайдено`);
         }
     }
     render() {
-        return html `<h1>${this.book} ${this.chapter}${this.verses ? `:${this.verses}` : ''}</h1>
-    ${this.selectTranslation ? this.translationSelector(this.bible.translations) : nothing}
-    ${this.bExcerpt(this.excerpt, this.verses, this.hilightVerses)}`;
+        return this.bible.excerpts.map(excerpt => html `<section class="bible">${this.bExcerpt(excerpt, this.hilightVerses)}</section>`);
     }
 };
 BibleExcerpt.styles = css `
@@ -143,26 +101,11 @@ BibleExcerpt.styles = css `
   }
   `;
 __decorate([
-    state()
-], BibleExcerpt.prototype, "excerpt", void 0);
-__decorate([
-    property({ type: Boolean })
-], BibleExcerpt.prototype, "selectTranslation", void 0);
-__decorate([
-    property({ type: String })
-], BibleExcerpt.prototype, "translation", void 0);
-__decorate([
-    property({ type: String })
-], BibleExcerpt.prototype, "book", void 0);
-__decorate([
-    property({ type: Number })
-], BibleExcerpt.prototype, "chapter", void 0);
-__decorate([
-    property({ type: String })
-], BibleExcerpt.prototype, "verses", void 0);
-__decorate([
-    property({ type: String })
+    property({ type: String, attribute: 'hilight-verses' })
 ], BibleExcerpt.prototype, "hilightVerses", void 0);
+__decorate([
+    property({ type: String })
+], BibleExcerpt.prototype, "reference", void 0);
 BibleExcerpt = __decorate([
     customElement('bible-excerpt')
 ], BibleExcerpt);

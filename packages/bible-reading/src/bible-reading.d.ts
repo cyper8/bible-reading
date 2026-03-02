@@ -1,4 +1,4 @@
-import { LitElement, PropertyValueMap } from "lit";
+import { LitElement, PropertyValues } from "lit";
 import "../../bible-excerpt/index.js";
 import "../../bible-reading-calendar/index.js";
 import { ReadingController } from "./ReadingController.js";
@@ -14,15 +14,17 @@ import { ReadingController } from "./ReadingController.js";
  */
 export declare class BibleReading extends LitElement {
     reading: ReadingController;
-    book: string;
-    chapter: string;
-    verses: string;
-    translation: string;
-    content: string;
-    private processContent;
-    connectedCallback(): void;
-    protected willUpdate(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void;
-    protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void;
+    date: Date;
+    readingRef: string;
+    questions: string;
+    exposititon: string;
+    private activateReferences;
+    static get greetings(): string[];
+    static get appeals(): string[];
+    greeting(date: Date): string;
+    refsToLinks(text: string): Promise<string>;
+    protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void;
+    protected updated(_changedProperties: PropertyValues<BibleReading>): void;
     protected render(): unknown;
     static get styles(): import("lit").CSSResult;
 }

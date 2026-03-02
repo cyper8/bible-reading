@@ -18,6 +18,7 @@
   "devDependencies": {
     "typescript": "^5.8.3",
     "vite": "^6.2.6",
-    "lit": "^3.2.1"
+    "lit": "^3.2.1",
+    "@cyper8/bible-reading": "../bible-reading"
   }
 }

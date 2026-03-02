@@ -8,5 +8,13 @@
     "isolatedModules": true,
     "rootDir": "."
   },
-  "include": [".","src"]
+  "include": [
+    ".",
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../utils/tsconfig.json"
+    }
+  ]
 }

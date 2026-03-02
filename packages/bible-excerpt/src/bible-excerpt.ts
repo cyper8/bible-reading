@@ -1,55 +1,16 @@
 import { LitElement, PropertyValues, css, html, nothing } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { BollsBibleController, type BollsBible } from './BollsBibleController.js';
-import { BibleEditionSelector } from './bible-edition-selector.js';
-
-const spreadNumbers = (numlist: string, length?: number) => numlist.split(',')
-  .reduce((numRanges: number[], entry) => {
-    let boundaries = entry.trim().split('-');
-    let first = parseInt(boundaries[0]) || 1;
-    let last = parseInt(boundaries[boundaries.length - 1]) || length || first;
-    while (entry && first <= last) {
-      numRanges.push(first++);
-    }
-    return numRanges;
-  }, []);
+import { getBollsChapterUrl, type BollsBible } from '../../utils/bolls.js';
+import { spreadNumbers } from '../../utils/spreadNumbers.js';
+import { BibleController, BibleExcerptData } from './BibleController.js';
 
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
-  
-  @state() private excerpt: BollsBible.ChapterVerses = [];
-
-  bible = new BollsBibleController(this);
-
-  @property({ type: Boolean }) selectTranslation: boolean = false;
-  @property({ type: String }) translation: string = 'UBIO';
-  @property({ type: String }) book: string = 'Буття';
-  @property({ type: Number }) chapter: string = '3';
-  @property({ type: String }) verses: string = '';
-  @property({ type: String }) hilightVerses: string = '';
-
-  private translationSelector(langs: BollsBible.Translations) {
-    import('./bible-edition-selector.js');
-    return html`<bible-edition-selector 
-    .translations=${langs}
-    .selectedLanguage=${
-      this.translation 
-      ? langs
-        .find(lang => 
-          lang.editions
-          .map(ed => ed.short_name)
-          .includes(this.translation)
-        )?.language || '' 
-      : ''}
-    .selectedEdition=${this.translation} 
-    @change=${
-      (event: Event) => {
-        let t = event.target as BibleEditionSelector; 
-        this.translation = t.selectedEdition
-      }}></bible-edition-selector>`
-  }
+  bible = new BibleController(this);
+  @property({ type: String, attribute: 'hilight-verses' }) hilightVerses: string = '';
+  @property({ type: String }) reference: string = '';
 
   private bChapterVerse(verse: BollsBible.ChapterVerse, hilight = false) {
     return html`<input type=radio name="note" id="verse${verse.verse}" class="note" />
@@ -72,34 +33,24 @@ export class BibleExcerpt extends LitElement {
     </label>`
   }
 
-  private bExcerpt(chapter: BollsBible.ChapterVerses, verses: string, hilight: string = '') {
-    let hilighted = spreadNumbers(hilight);
-    return spreadNumbers(verses ? verses : "1-", chapter.length)
-      .map(vnum => chapter[vnum - 1]).filter(v => v)
-      .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
+  private bExcerpt(excerpt: BibleExcerptData, hilight: string = '') {
+    let hilighted = hilight ? spreadNumbers(hilight) : [];
+    let url = getBollsChapterUrl(excerpt);
+    return html`<div class="excerpt"><h3><a href=${url}>${excerpt.reference}</a></h3>
+    ${excerpt.verses
+        .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}</div>`
   }
 
-  protected willUpdate(_changedProperties: Map<PropertyKey, PropertyValues<this>>): void {
-    if (_changedProperties.has("translation")
-      || _changedProperties.has("book")
-      || _changedProperties.has("chapter")
-      || _changedProperties.has("verses")) {
-        if (this.translation in this.bible.editions) {
-          let booknum = this.bible.editions[this.translation].findIndex(book => book.name === this.book) + 1;
-          if (booknum)
-            this.bible.getChapter(this.translation, booknum, parseInt(this.chapter))
-              .then(verses => {
-                this.excerpt = verses;
-              })
-          else throw new Error(`помилка запиту`)
-        } else throw new Error(`Помилка: перекладу не знайдено`)
+  protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void {
+    if (_changedProperties.has("reference")) {
+      if (this.reference !== this.bible.reference) {
+        this.bible.init(this.reference);
+      }
     }
   }
 
   render() {
-    return html`<h1>${this.book} ${this.chapter}${this.verses ? `:${this.verses}` : ''}</h1>
-    ${this.selectTranslation ? this.translationSelector(this.bible.translations) : nothing}
-    ${this.bExcerpt(this.excerpt, this.verses, this.hilightVerses)}`;
+    return this.bible.excerpts.map(excerpt => html`<section class="bible">${this.bExcerpt(excerpt, this.hilightVerses)}</section>`);
   }
 
   static styles = css`
