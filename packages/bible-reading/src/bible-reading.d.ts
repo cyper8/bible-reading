@@ -15,13 +15,12 @@ import { ReadingController } from "./ReadingController.js";
 export declare class BibleReading extends LitElement {
     reading: ReadingController;
     date: Date;
-    readingRef: string;
     questions: string;
     exposititon: string;
     private activateReferences;
     static get greetings(): string[];
     static get appeals(): string[];
-    greeting(date: Date): string;
+    greeting(date: Date): import("lit-html").TemplateResult<1>;
     refsToLinks(text: string): Promise<string>;
     protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void;
     protected updated(_changedProperties: PropertyValues<BibleReading>): void;

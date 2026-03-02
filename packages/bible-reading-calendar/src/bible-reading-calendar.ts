@@ -50,11 +50,12 @@ export class BibleReadingCalendar extends LitElement {
         let today = (n == theday);
         let ffwd = (n == a.length - 1);
         let rewd = (n == 0);
+        let empty = d == undefined;
         return html`<div class="${classMap({
           day: true,
           ffwd,
           rewd,
-          empty: (d == undefined || ffwd || rewd),
+          empty: (empty || ffwd || rewd),
           selected: today,
           weekend: dw > 4
         })}"
@@ -62,7 +63,7 @@ export class BibleReadingCalendar extends LitElement {
           'grid-column': `span ${rewd ? offset : (ffwd ? 7 - dw : 1)}`
         })}"
           @click="${() => {
-            if (!today) {
+            if (ffwd || rewd || !(today || empty)) {
               this.date = date;
               this.reportData({
                 date,
@@ -85,12 +86,6 @@ export class BibleReadingCalendar extends LitElement {
       composed: true
     }) as ReadingDateSelectedEvent)
   }
-
-  // protected updated(_changedProperties: PropertyValueMap<this> | Map<PropertyKey, unknown>): void {
-  //   if (_changedProperties.has("date")) {
-
-  //   }
-  // }
 
   protected render() {
     return html`

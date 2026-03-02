@@ -130,7 +130,7 @@ export class BibleController {
         }, []);
     }
     static getBibleEditions(bollsTranslations, bollsEditions) {
-        return bollsTranslations.map(translation => translation.editions
+        return bollsTranslations.map(translation => translation.translations
             .map(edition => {
             return {
                 ...edition,
@@ -169,7 +169,7 @@ export class BibleController {
         })))
             .then(ex => {
             this.excerpts = ex;
-        }).finally(this.host.requestUpdate);
+        }).finally(() => { this.host.requestUpdate(); });
     }
     constructor(host) {
         this.translations = [];

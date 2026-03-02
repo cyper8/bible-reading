@@ -32,7 +32,7 @@ export namespace BollsBible {
 
   export declare interface Translation {
     language: string;
-    editions: Edition[];
+    translations: Edition[];
   }
 
   export declare interface Book {

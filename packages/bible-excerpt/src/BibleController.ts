@@ -153,7 +153,7 @@ export class BibleController implements ReactiveController {
 
   static getBibleEditions(bollsTranslations: BollsBible.Translations, bollsEditions: BollsBible.EditionBooks): BibleEdition[] {
     return bollsTranslations.map(translation =>
-      translation.editions
+      translation.translations
         .map(edition => {
           return {
             ...edition,
@@ -209,7 +209,7 @@ export class BibleController implements ReactiveController {
     )
       .then(ex => {
         this.excerpts = ex;
-      }).finally(this.host.requestUpdate)
+      }).finally(() => { this.host.requestUpdate() })
   }
 
   constructor(host: ReactiveControllerHost) {

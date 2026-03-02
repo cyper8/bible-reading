@@ -25,7 +25,7 @@ export declare namespace BollsBible {
     }
     interface Translation {
         language: string;
-        editions: Edition[];
+        translations: Edition[];
     }
     interface Book {
         bookid: number;
