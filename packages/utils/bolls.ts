@@ -1,7 +1,7 @@
 /** /bolls/ => https://bolls.life/ */
 
-export const BOLLS_TRANSLATIONS = '/bolls/static/bolls/app/views/languages.json';
-export const BOLLS_EDITIONSBOOKS = '/bolls/static/bolls/app/views/translations_books.json';
+export const BOLLS_TRANSLATIONS = 'https://bolls.life/static/bolls/app/views/languages.json';
+export const BOLLS_EDITIONSBOOKS = 'https://bolls.life/static/bolls/app/views/translations_books.json';
 
 export namespace BollsBible {
 
@@ -52,28 +52,19 @@ export namespace BollsBible {
 }
 
 export async function fetchBollsTranslations(): Promise<BollsBible.Translations> {
-  const resp = await fetch(BOLLS_TRANSLATIONS, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json', }
-  });
+  const resp = await fetch(BOLLS_TRANSLATIONS);
   const result: BollsBible.Translations = await resp.json();
   return result;
 }
 
 export async function fetchBollsEditionBooks(): Promise<BollsBible.EditionBooks> {
-  const resp = await fetch(BOLLS_EDITIONSBOOKS, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json', }
-  });
+  const resp = await fetch(BOLLS_EDITIONSBOOKS);
   const result: BollsBible.EditionBooks = await resp.json();
   return result;
 }
 
 export async function fetchBollsChapter({ edition, book, chapter }: { edition: BollsBible.Edition['short_name']; book: number; chapter: number; }): Promise<BollsBible.ChapterVerses> {
-  const resp = await fetch(`/bolls/get-chapter/${edition}/${book}/${chapter}/`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json', }
-  });
+  const resp = await fetch(`https://bolls.life/get-chapter/${edition}/${book}/${chapter}/`);
   const result: BollsBible.ChapterVerses = await resp.json();
   return result;
 }
