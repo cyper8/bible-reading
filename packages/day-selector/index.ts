@@ -1,1 +1,1 @@
-export {DaySelector, type DateSelectedEvent as ReadingDateSelectedEvent, type DayData} from "./src/day-selector.js"
+export {DaySelector, type DateSelectedEvent, type DayData} from "./src/day-selector.js"
