@@ -7,7 +7,7 @@
     },
     
     "scripts": {
-        "start": "vite --debug"
+        "start": "vite"
     },
     "devDependencies": {
         "vite": "^6.2.6"

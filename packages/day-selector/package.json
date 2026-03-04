@@ -1,5 +1,5 @@
 {
-  "name": "@cyper8/bible-reading-calendar",
+  "name": "@cyper8/day-selector",
   "version": "0.0.1",
   "type": "module",
   "main": "./index.js",

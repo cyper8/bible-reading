@@ -1,7 +1,7 @@
 import { LitElement, PropertyValues } from "lit";
 import "../../bible-excerpt/index.js";
-import "../../bible-reading-calendar/index.js";
-import { ReadingController } from "./ReadingController.js";
+import "../../day-selector/index.js";
+import { ReadingController, ReadingDataProvider } from "./ReadingController.js";
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
  * and presents the excerpt itself with some extra utility stuff like hilighting
@@ -13,6 +13,7 @@ import { ReadingController } from "./ReadingController.js";
  * @extends {LitElement}
  */
 export declare class BibleReading extends LitElement {
+    parseReadingDataFromLightDOM: ReadingDataProvider;
     reading: ReadingController;
     date: Date;
     questions: string;

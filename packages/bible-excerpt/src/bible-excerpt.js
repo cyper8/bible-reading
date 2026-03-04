@@ -55,8 +55,7 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
     render() {
         return this.bible.excerpts.map(excerpt => html `<section class="bible">${this.bExcerpt(excerpt, this.hilightVerses)}</section>`);
     }
-};
-BibleExcerpt.styles = css `
+    static { this.styles = css `
   * {box-sizing: border-box}
   :host {
     display: block;
@@ -99,7 +98,8 @@ BibleExcerpt.styles = css `
   input:checked+label span.comment {
     display: inline-block;
   }
-  `;
+  `; }
+};
 __decorate([
     property({ type: String, attribute: 'hilight-verses' })
 ], BibleExcerpt.prototype, "hilightVerses", void 0);

@@ -1,8 +1,10 @@
-var _a;
 import { fetchBollsTranslations, fetchBollsEditionBooks, fetchBollsChapter, getBollsChapterUrl } from "../../utils/bolls.js";
 import { spreadNumbers } from "../../utils/spreadNumbers.js";
 const DEFAULT_TRANSLATION = 'UBIO';
 export class BibleController {
+    static { this.editions = Promise.all([fetchBollsTranslations(), fetchBollsEditionBooks()]).then(([translations, editions]) => {
+        return this.getBibleEditions(translations, editions);
+    }); }
     static bookSearch(query, editions) {
         //const MIN_MATCH_LENGTH = 1;
         let selectedBooks = editions.map(e => e.books.map(b => {
@@ -140,13 +142,13 @@ export class BibleController {
         })).flat();
     }
     async selectLanguages(languages) {
-        _a.editions
+        BibleController.editions
             .then(editions => {
             this.editions = editions.filter(edition => languages.some(lang => edition.language.includes(lang)));
         });
     }
     parseReferenses(refs, editions = this.editions) {
-        return _a.parseReferenses(refs, editions);
+        return BibleController.parseReferenses(refs, editions);
     }
     static refAnchor(ref) {
         return `<a href="${getBollsChapterUrl(ref)}">${ref.reference}</a>`;
@@ -185,7 +187,3 @@ export class BibleController {
     hostUpdate() { }
     hostUpdated() { }
 }
-_a = BibleController;
-BibleController.editions = Promise.all([fetchBollsTranslations(), fetchBollsEditionBooks()]).then(([translations, editions]) => {
-    return _a.getBibleEditions(translations, editions);
-});

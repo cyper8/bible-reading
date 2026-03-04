@@ -1,17 +1,25 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
-export declare const stripHours: (date: Date) => Date;
-export declare interface ReadingDay {
+import { DayData } from "../../day-selector/index.js";
+export declare interface ReadingDay extends DayData {
     date: Date;
     reading: string;
     questions: string;
     exposition: string;
 }
+export type RawReadingDay = {
+    [key in keyof ReadingDay]: string;
+};
+export type ReadingDataProvider = (date: Date) => Promise<RawReadingDay[]> | RawReadingDay[];
 export type ReadingMonth = ReadingDay[];
+export declare const stripHours: (date: Date) => Date;
+export declare function isRawReadingDay(obj: Object): obj is RawReadingDay;
 export declare class ReadingController implements ReactiveController {
     host: ReactiveControllerHost;
     month: ReadingMonth;
     day?: ReadingDay;
-    constructor(host: ReactiveControllerHost);
+    private dataSourse;
+    constructor(host: ReactiveControllerHost, dataProvider?: ReadingDataProvider);
+    loadMonthData(data: RawReadingDay[]): void;
     setReadingDate(date: Date): Promise<void>;
     hostConnected(): void;
     hostDisconnected(): void;

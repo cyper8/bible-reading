@@ -7,14 +7,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var BibleReading_1;
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-// import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { marked } from "marked";
 import "../../bible-excerpt/index.js";
-import "../../bible-reading-calendar/index.js";
-import { ReadingController, stripHours } from "./ReadingController.js";
+import "../../day-selector/index.js";
+import { ReadingController, isRawReadingDay, stripHours } from "./ReadingController.js";
 import { BibleController } from "../../bible-excerpt/src/BibleController.js";
 import { pickOneOf } from "../../utils/pickOneOf.js";
-// import { until } from "lit/directives/until.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
@@ -29,7 +27,32 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     constructor() {
         super(...arguments);
-        this.reading = new ReadingController(this);
+        this.parseReadingDataFromLightDOM = (date) => {
+            const month = date.getMonth();
+            const year = date.getFullYear();
+            const content = this.innerHTML;
+            if (content) {
+                try {
+                    let data = JSON.parse(content);
+                    if (data instanceof Array) {
+                        if (data.length && data[0].date) {
+                            let dataDate = new Date(data[0].date);
+                            if (dataDate.getMonth() !== month || dataDate.getFullYear() !== year) {
+                                window.location.href = window.location.origin + window.location.pathname + `?date=${date.toDateString()}`;
+                            }
+                            return data.filter(obj => isRawReadingDay(obj));
+                        }
+                    }
+                }
+                catch (error) {
+                    console.error(error);
+                }
+                return [];
+            }
+            else
+                return [];
+        };
+        this.reading = this.innerHTML !== "" ? new ReadingController(this, this.parseReadingDataFromLightDOM) : new ReadingController(this);
         this.date = stripHours(new Date());
         this.questions = '';
         this.exposititon = '';
@@ -150,9 +173,9 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
         }
     }
     render() {
-        return html `<bible-reading-calendar .reading=${this.reading.month} @reading-date-selected="${(event) => {
+        return html `<day-selector .month=${this.reading.month} @date-selected="${(event) => {
             this.date = event.detail.date;
-        }}"></bible-reading-calendar>
+        }}"></day-selector>
     ${this.reading.day
             ? html `${this.greeting(this.date)}
     <p>Сьогодні читаємо:</p>
