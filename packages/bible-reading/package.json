@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@cyper8/bible-excerpt": "*",
-    "@cyper8/bible-reading-calendar": "*"
+    "@cyper8/day-selector": "*"
   },
   "peerDependencies": {
     "lit": "^3.2.1",

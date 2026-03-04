@@ -8,6 +8,21 @@ import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { styleMap } from "lit/directives/style-map.js";
+/** zero-based day of week (like Date.prototype.getDay) but locale-corrected (if supported by browser) */
+const getLocaleDayOfWeek = (date) => {
+    const locale = new Intl.Locale(navigator.language);
+    var weekStart;
+    if ("getWeekInfo" in locale) {
+        weekStart = locale.getWeekInfo().firstDay;
+    }
+    else {
+        weekStart = navigator.languages.includes("uk") ? 1 : 7;
+    }
+    return (date.getDay() + 7 - weekStart) % 7;
+};
+const weekDaysNames = Array(7)
+    .fill(0).map((_d, n) => new Date(0, 0, n))
+    .reduce((w, d) => w.with(d.getDay() - 1, d.toLocaleDateString(undefined, { weekday: "short" })), Array(7));
 const daysInMonth = (m0, y) => {
     let d = new Date();
     d.setFullYear(y || d.getFullYear());
@@ -15,62 +30,57 @@ const daysInMonth = (m0, y) => {
     d.setDate(0);
     return d.getDate();
 };
-let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
+let DaySelector = class DaySelector extends LitElement {
     constructor() {
         super(...arguments);
         this.date = new Date();
-        this.reading = [];
+        this.month = [];
     }
-    genMonth(data, currentReadingDate = new Date()) {
-        const week = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
-        let month = currentReadingDate.getMonth();
-        let year = currentReadingDate.getFullYear();
-        let theday = currentReadingDate.getDate();
+    genMonth(monthData, currentDate = new Date()) {
+        let month = currentDate.getMonth();
+        let year = currentDate.getFullYear();
+        let today = currentDate.getDate();
         let day1 = new Date(year, month, 1);
-        let offset = (day1.getDay() + 7 - 1) % 7 || 7;
-        let length = daysInMonth(month, year);
-        let monthData = data;
-        let gen = Array(length + 2).fill(undefined);
-        monthData.forEach(day => {
-            gen[day.date.getDate()] = day;
+        let firstDayOffset = getLocaleDayOfWeek(day1) || 7; // if the month starts from first weekday, add whole week for "to previous month" option plus compensate
+        let monthLength = daysInMonth(month, year);
+        let calendarDaysData = Array(monthLength + 2).fill(undefined);
+        monthData.forEach((day) => {
+            calendarDaysData[day.date.getDate()] = day;
         });
         return html `<section class="calendar">
-      ${week.map(d => html `<div class="day header">${d}</div>`)}
-      ${gen.map((d, n, a) => {
+      ${weekDaysNames.map(weekdayname => html `<div class="day header">${weekdayname}</div>`)}
+      ${calendarDaysData.map((dayData, n, a) => {
             let date = new Date(year, month, n);
-            let dw = (n + offset - 1) % 7;
-            let today = (n == theday);
-            let ffwd = (n == a.length - 1);
-            let rewd = (n == 0);
-            let empty = d == undefined;
+            let dayOfWeek = getLocaleDayOfWeek(date);
+            let isToday = (n == today);
+            let nextMonth = (n == a.length - 1);
+            let prevMonth = (n == 0);
+            let empty = dayData == undefined;
             return html `<div class="${classMap({
                 day: true,
-                ffwd,
-                rewd,
-                empty: (empty || ffwd || rewd),
-                selected: today,
-                weekend: dw > 4
+                ffwd: nextMonth,
+                rewd: prevMonth,
+                empty: (empty || nextMonth || prevMonth),
+                selected: isToday,
+                weekend: dayOfWeek > 4
             })}"
           style="${styleMap({
-                'grid-column': `span ${rewd ? offset : (ffwd ? 7 - dw : 1)}`
+                'grid-column': `span ${prevMonth ? firstDayOffset : (nextMonth ? 7 - dayOfWeek : 1)}`
             })}"
           @click="${() => {
-                if (ffwd || rewd || !(today || empty)) {
+                if (nextMonth || prevMonth || !(isToday || empty)) {
                     this.date = date;
                     this.reportData({
                         date,
-                        reading: '',
-                        questions: '',
-                        exposition: '',
-                        ...d
+                        ...(dayData || {})
                     });
                 }
             }}">${n}</div>`;
         })}</section>`;
     }
-    reportData(reading) {
-        this.dispatchEvent(new CustomEvent('reading-date-selected', {
-            detail: reading,
+    reportData(data) {
+        this.dispatchEvent(new CustomEvent('date-selected', {
+            detail: data,
             bubbles: true,
             composed: true
         }));
@@ -80,7 +90,7 @@ let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
     <label class="icon" id="clock" for="date-selector-switch">
       ${(this.date).toLocaleDateString(navigator.language, { dateStyle: 'long' })}<input type=checkbox id="date-selector-switch" hidden />
       <div class="date-selector">
-        ${this.genMonth(this.reading, this.date)}
+        ${this.genMonth(this.month, this.date)}
       </div>
     </label>
     
@@ -179,11 +189,11 @@ let BibleReadingCalendar = class BibleReadingCalendar extends LitElement {
 };
 __decorate([
     property({ type: Date })
-], BibleReadingCalendar.prototype, "date", void 0);
+], DaySelector.prototype, "date", void 0);
 __decorate([
     property({ type: Array })
-], BibleReadingCalendar.prototype, "reading", void 0);
-BibleReadingCalendar = __decorate([
-    customElement('bible-reading-calendar')
-], BibleReadingCalendar);
-export { BibleReadingCalendar };
+], DaySelector.prototype, "month", void 0);
+DaySelector = __decorate([
+    customElement('day-selector')
+], DaySelector);
+export { DaySelector };
