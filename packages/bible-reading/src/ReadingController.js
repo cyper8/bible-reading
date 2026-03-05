@@ -1,5 +1,5 @@
 import { getJSONP } from "../../utils/getJSONP.js";
-const DEFAULT_READING_SOURCE = "/reading/json";
+const DEFAULT_READING_SOURCE = location.origin + "/json";
 const defaultReadingDataProvider = (date) => getJSONP(DEFAULT_READING_SOURCE, `date=${date.toDateString()}`);
 export const stripHours = (date) => (date.setHours(0, 0, 0, 0), date);
 const objToReadingDay = (object) => {
