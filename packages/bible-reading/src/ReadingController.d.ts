@@ -19,7 +19,7 @@ export declare class ReadingController implements ReactiveController {
     day?: ReadingDay;
     private dataSourse;
     constructor(host: ReactiveControllerHost, dataProvider?: ReadingDataProvider);
-    loadMonthData(data: RawReadingDay[]): void;
+    private loadMonthData;
     setReadingDate(date: Date): Promise<void>;
     hostConnected(): void;
     hostDisconnected(): void;

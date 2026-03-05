@@ -20,12 +20,12 @@ const getLocaleDayOfWeek = (date: Date) => {
   } else {
     weekStart = navigator.languages.includes("uk") ? 1 : 7;
   }
-  return (date.getDay()+7-weekStart) % 7
+  return (date.getDay() + 7 - weekStart) % 7
 }
 
 const weekDaysNames = Array(7)
-.fill(0).map((_d,n) => new Date(0,0,n))
-.reduce((w: Array<any>,d)=>w.with(d.getDay()-1,d.toLocaleDateString(undefined,{weekday:"short"})),Array(7));
+  .fill(0).map((_d, n) => new Date(0, 0, n))
+  .reduce((w: Array<any>, d) => w.with(d.getDay() - 1, d.toLocaleDateString(undefined, { weekday: "short" })), Array(7));
 
 const daysInMonth = (m0: number, y?: number) => {
   let d = new Date();
@@ -74,13 +74,11 @@ export class DaySelector<T extends DayData> extends LitElement {
           'grid-column': `span ${prevMonth ? firstDayOffset : (nextMonth ? 7 - dayOfWeek : 1)}`
         })}"
           @click="${() => {
-            if (nextMonth || prevMonth || !(isToday || empty)) {
-              this.date = date;
-              this.reportData({
-                date,
-                ...(dayData || {})
-              } as T);
-            }
+            this.date = date;
+            this.reportData({
+              date,
+              ...(dayData || {})
+            } as T);
           }
           }">${n}</div>`
       }

@@ -1,13 +1,20 @@
 import { fetchBollsTranslations, fetchBollsEditionBooks, fetchBollsChapter, getBollsChapterUrl } from "../../utils/bolls.js";
 import { spreadNumbers } from "../../utils/spreadNumbers.js";
 const DEFAULT_TRANSLATION = 'UBIO';
+export function isBibleExcerpt(reference) {
+    return reference.book !== undefined &&
+        typeof reference.book === "number" &&
+        "verses" in reference &&
+        reference.verses instanceof Array;
+}
 export class BibleController {
     static { this.editions = Promise.all([fetchBollsTranslations(), fetchBollsEditionBooks()]).then(([translations, editions]) => {
         return this.getBibleEditions(translations, editions);
     }); }
-    static bookSearch(query, editions) {
+    static async bookSearch(query, editions = this.editions) {
         //const MIN_MATCH_LENGTH = 1;
-        let selectedBooks = editions.map(e => e.books.map(b => {
+        let selectedBooks = (await editions)
+            .map(e => e.books.map(b => {
             return {
                 ...b,
                 edition: e.short_name,
@@ -59,29 +66,14 @@ export class BibleController {
         }, [])
             .sort((b1, b2) => b2.searchWeight - b1.searchWeight);
     }
-    static getBookNum(bookName, editions) {
-        let searchInEdition = (this.bookSearch(bookName.toString(), editions))
+    static async getBookNum(bookName, editions = this.editions) {
+        let searchInEdition = (await this.bookSearch(bookName.toString(), editions))
             .filter(sr => sr.searchWeight >= bookName.length * 0.7);
         if (searchInEdition.length)
             return searchInEdition[0].bookid;
-        else {
-            let searchInAll = this.bookSearch(bookName.toString(), editions)
-                .filter(sr => sr.searchWeight >= bookName.length * 0.7)
-                .filter(book => book !== undefined)
-                .sort((b1, b2) => b2.bookid - b1.bookid);
-            let collapsed = [];
-            while (searchInAll.length) {
-                let bid = searchInAll[0].bookid;
-                let count = searchInAll.findIndex(book => book.bookid !== bid);
-                collapsed.push([searchInAll[0], count]);
-                searchInAll.splice(0, count);
-            }
-            let top = collapsed.sort((b1, b2) => b1[1] - b2[1]).pop();
-            return top ? top[0].bookid : undefined;
-        }
     }
-    static parseReferenses(refs, editions) {
-        return refs.split(',')
+    static async parseReferenses(refs, editions = this.editions) {
+        return Promise.all(refs.split(',')
             .reduce((result, ref, i, _originalRefs) => {
             let translation, foundtranslations = ref.trim().match(/\([A-Z0-9]+\)/);
             if (foundtranslations && foundtranslations.length) {
@@ -105,12 +97,9 @@ export class BibleController {
             ;
             if (bookName === '') {
                 bookName = i > 0 ? result[i - 1].bookName : '';
-                bookNum = i > 0 ? result[i - 1].book : 0;
+                bookNum = i > 0 ? result[i - 1].book : undefined;
             }
-            else {
-                bookNum = this.getBookNum(bookName, editions) || 0;
-            }
-            if (bookName && bookNum)
+            if (bookName)
                 chapters.forEach((chapter, i) => {
                     let verses = [];
                     if (i === chapters.length - 1) {
@@ -129,7 +118,11 @@ export class BibleController {
                     result.push(excerpt);
                 });
             return result;
-        }, []);
+        }, []).map(async (br) => {
+            let bn = await this.getBookNum(br.bookName, editions);
+            br.book = bn;
+            return br;
+        }));
     }
     static getBibleEditions(bollsTranslations, bollsEditions) {
         return bollsTranslations.map(translation => translation.translations
@@ -141,42 +134,44 @@ export class BibleController {
             };
         })).flat();
     }
-    async selectLanguages(languages) {
-        BibleController.editions
-            .then(editions => {
-            this.editions = editions.filter(edition => languages.some(lang => edition.language.includes(lang)));
-        });
-    }
-    parseReferenses(refs, editions = this.editions) {
-        return BibleController.parseReferenses(refs, editions);
+    async parseReferenses(refs) {
+        return BibleController.parseReferenses(refs, this.editions);
     }
     static refAnchor(ref) {
-        return `<a href="${getBollsChapterUrl(ref)}">${ref.reference}</a>`;
+        if (ref.book) {
+            return `<a href="${getBollsChapterUrl({ edition: ref.edition, book: ref.book, chapter: ref.chapter, verse: ref.selectedVerses[0] })}">${ref.reference}</a>`;
+        }
+        else
+            return ref.reference;
     }
-    get languages() { return this._languages; }
-    set languages(langs) {
-        this.selectLanguages(this._languages = langs);
+    get editions() {
+        return BibleController.editions
+            .then(editions => editions.filter(edition => this.languages.some(lang => edition.language.includes(lang))));
     }
     get reference() { return this._reference; }
     ;
     set reference(ref) { this.init(ref); }
     init(ref) {
-        Promise.all(this.parseReferenses(this._reference = ref)
-            .map(ex => fetchBollsChapter(ex)
+        this.parseReferenses(this._reference = ref)
+            .then(exerpts => exerpts.map(excerpt => fetchBollsChapter(excerpt)
             .then(verses => {
-            return {
-                ...ex,
-                verses
-            };
+            if (excerpt.book && verses.length) {
+                return {
+                    ...excerpt,
+                    verses
+                };
+            }
+            else {
+                return excerpt;
+            }
         })))
-            .then(ex => {
-            this.excerpts = ex;
-        }).finally(() => { this.host.requestUpdate(); });
+            .then(async (ex) => {
+            this.excerpts = await Promise.all(ex);
+        })
+            .finally(() => { this.host.requestUpdate(); });
     }
     constructor(host) {
-        this.translations = [];
-        this.editions = [];
-        this._languages = [];
+        this.languages = [];
         this._reference = '';
         this.excerpts = [];
         this.host = host;

@@ -52,23 +52,49 @@ export namespace BollsBible {
 }
 
 export async function fetchBollsTranslations(): Promise<BollsBible.Translations> {
-  const resp = await fetch(BOLLS_TRANSLATIONS);
-  const result: BollsBible.Translations = await resp.json();
-  return result;
+  try {
+    const resp = await fetch(BOLLS_TRANSLATIONS);
+    if (!resp.ok) {
+      throw new Error(`Fetch failed with status: ${resp.status}`)
+    }
+    const result: BollsBible.Translations = await resp.json();
+    return result;
+  } catch (error) {
+    console.error(error)
+    return []
+  }
 }
 
 export async function fetchBollsEditionBooks(): Promise<BollsBible.EditionBooks> {
-  const resp = await fetch(BOLLS_EDITIONSBOOKS);
-  const result: BollsBible.EditionBooks = await resp.json();
-  return result;
+  try {
+    const resp = await fetch(BOLLS_EDITIONSBOOKS);
+    if (!resp.ok) {
+      throw new Error(`Fetch failed with status: ${resp.status}`)
+    }
+    const result: BollsBible.EditionBooks = await resp.json();
+    return result;
+  } catch (error) {
+    console.error(error)
+    return {}
+  }
 }
 
-export async function fetchBollsChapter({ edition, book, chapter }: { edition: BollsBible.Edition['short_name']; book: number; chapter: number; }): Promise<BollsBible.ChapterVerses> {
-  const resp = await fetch(`https://bolls.life/get-chapter/${edition}/${book}/${chapter}/`);
-  const result: BollsBible.ChapterVerses = await resp.json();
-  return result;
+export async function fetchBollsChapter({ edition, book, chapter }: { edition: BollsBible.Edition['short_name']; book: number | undefined; chapter: number; }): Promise<BollsBible.ChapterVerses> {
+  try {
+    if (book) {
+      const resp = await fetch(`https://bolls.life/get-chapter/${edition}/${book}/${chapter}/`);
+      if (!resp.ok) {
+        throw new Error(`Fetch failed with status: ${resp.status}`)
+      }
+      const result: BollsBible.ChapterVerses = await resp.json();
+      return result;
+    } else throw Error(`Cannot fetch chapter of unknown book.`)
+  } catch (error) {
+    console.error(error)
+    return []
+  }
 }
 
 export function getBollsChapterUrl({ edition, book, chapter, verse }: { edition: BollsBible.Edition['short_name']; book: number; chapter: number; verse?: number }) {
-  return `https://bolls.life/${edition}/${book}/${chapter}/${verse ? verse + "/" : ""}`;
+  return `https://bolls.life/${edition}/${book ? book : 1}/${book ? chapter : 1}/${(book && verse) ? verse + "/" : ""}`;
 }

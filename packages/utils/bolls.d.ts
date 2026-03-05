@@ -43,7 +43,7 @@ export declare function fetchBollsTranslations(): Promise<BollsBible.Translation
 export declare function fetchBollsEditionBooks(): Promise<BollsBible.EditionBooks>;
 export declare function fetchBollsChapter({ edition, book, chapter }: {
     edition: BollsBible.Edition['short_name'];
-    book: number;
+    book: number | undefined;
     chapter: number;
 }): Promise<BollsBible.ChapterVerses>;
 export declare function getBollsChapterUrl({ edition, book, chapter, verse }: {

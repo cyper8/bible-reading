@@ -14,8 +14,8 @@ import { ReadingController, ReadingDataProvider } from "./ReadingController.js";
  */
 export declare class BibleReading extends LitElement {
     parseReadingDataFromLightDOM: ReadingDataProvider;
+    date?: Date;
     reading: ReadingController;
-    date: Date;
     questions: string;
     exposititon: string;
     private activateReferences;
@@ -24,6 +24,7 @@ export declare class BibleReading extends LitElement {
     greeting(date: Date): import("lit-html").TemplateResult<1>;
     refsToLinks(text: string): Promise<string>;
     protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void;
+    connectedCallback(): void;
     protected updated(_changedProperties: PropertyValues<BibleReading>): void;
     protected render(): unknown;
     static get styles(): import("lit").CSSResult;

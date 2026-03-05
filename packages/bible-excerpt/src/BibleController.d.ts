@@ -4,11 +4,12 @@ export interface BibleReference {
     edition: BollsBible.Edition["short_name"];
     reference: string;
     bookName: string;
-    book: number;
+    book: number | undefined;
     chapter: number;
     selectedVerses: number[];
 }
 export interface BibleExcerptData extends BibleReference {
+    book: number;
     verses: BollsBible.ChapterVerses;
 }
 export interface BookSearchResult extends BollsBible.Book {
@@ -19,31 +20,28 @@ export interface BibleEdition extends BollsBible.Edition {
     language: string;
     books: BollsBible.Book[];
 }
+export declare function isBibleExcerpt(reference: BibleReference | BibleExcerptData): reference is BibleExcerptData;
 export declare class BibleController implements ReactiveController {
     static editions: Promise<BibleEdition[]>;
-    static bookSearch(query: string, editions: BibleEdition[]): BookSearchResult[];
-    static getBookNum(bookName: string, editions: BibleEdition[]): number | undefined;
-    static parseReferenses(refs: string, editions: BibleEdition[]): BibleReference[];
-    static getBibleEditions(bollsTranslations: BollsBible.Translations, bollsEditions: BollsBible.EditionBooks): BibleEdition[];
-    selectLanguages(languages: string[]): Promise<void>;
-    parseReferenses(refs: string, editions?: BibleEdition[]): BibleReference[];
+    static bookSearch(query: string, editions?: Promise<BibleEdition[]>): Promise<BookSearchResult[]>;
+    static getBookNum(bookName: string, editions?: Promise<BibleEdition[]>): Promise<number | undefined>;
+    static parseReferenses(refs: string, editions?: Promise<BibleEdition[]>): Promise<BibleReference[]>;
+    private static getBibleEditions;
+    parseReferenses(refs: string): Promise<BibleReference[]>;
     static refAnchor(ref: {
         edition: BollsBible.Edition['short_name'];
-        book: number;
+        book: number | undefined;
         chapter: number;
         selectedVerses: number[];
         reference: string;
     }): string;
     host: ReactiveControllerHost;
-    translations: BollsBible.Translations;
-    editions: BibleEdition[];
-    private _languages;
-    get languages(): string[];
-    set languages(langs: string[]);
+    get editions(): Promise<BibleEdition[]>;
+    private languages;
     private _reference;
     get reference(): string;
     set reference(ref: string);
-    excerpts: BibleExcerptData[];
+    excerpts: (BibleReference | BibleExcerptData)[];
     init(ref: string): void;
     constructor(host: ReactiveControllerHost);
     hostConnected(): void;

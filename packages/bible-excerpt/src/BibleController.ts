@@ -8,40 +8,45 @@ export interface BibleReference {
   edition: BollsBible.Edition["short_name"]
   reference: string
   bookName: string
-  book: number
+  book: number | undefined
   chapter: number
   selectedVerses: number[]
 }
-
 export interface BibleExcerptData extends BibleReference {
+  book: number
   verses: BollsBible.ChapterVerses
 }
-
 export interface BookSearchResult extends BollsBible.Book {
   edition: BollsBible.Edition['short_name']
   searchWeight: number
 }
-
 export interface BibleEdition extends BollsBible.Edition {
   language: string;
   books: BollsBible.Book[]
 }
 
-export class BibleController implements ReactiveController {
+export function isBibleExcerpt(reference: BibleReference | BibleExcerptData): reference is BibleExcerptData {
+  return reference.book !== undefined &&
+    typeof reference.book === "number" &&
+    "verses" in reference &&
+    reference.verses instanceof Array
+}
 
+export class BibleController implements ReactiveController {
   static editions: Promise<BibleEdition[]> = Promise.all([fetchBollsTranslations(), fetchBollsEditionBooks()]).then(([translations, editions]) => {
     return this.getBibleEditions(translations, editions)
   });
 
-  static bookSearch(query: string, editions: BibleEdition[]): BookSearchResult[] {
+  static async bookSearch(query: string, editions = this.editions): Promise<BookSearchResult[]> {
     //const MIN_MATCH_LENGTH = 1;
-    let selectedBooks: BookSearchResult[] = editions.map(e => e.books.map(b => {
-      return {
-        ...b,
-        edition: e.short_name,
-        searchWeight: 0
-      } as BookSearchResult
-    })).flat();
+    let selectedBooks: BookSearchResult[] = (await editions)
+      .map(e => e.books.map(b => {
+        return {
+          ...b,
+          edition: e.short_name,
+          searchWeight: 0
+        } as BookSearchResult
+      })).flat();
     let subqueries: string[] = query.split(" ");
     return selectedBooks.reduce<BookSearchResult[]>((matches: BookSearchResult[], book: BookSearchResult) => {
       let matchWeight = 0;
@@ -80,78 +85,66 @@ export class BibleController implements ReactiveController {
       .sort((b1, b2) => b2.searchWeight - b1.searchWeight)
   }
 
-  static getBookNum(bookName: string, editions: BibleEdition[]): number | undefined {
-    let searchInEdition = (this.bookSearch(bookName.toString(), editions))
+  static async getBookNum(bookName: string, editions = this.editions): Promise<number | undefined> {
+    let searchInEdition = (await this.bookSearch(bookName.toString(), editions))
       .filter(sr => sr.searchWeight >= bookName.length * 0.7);
     if (searchInEdition.length) return searchInEdition[0].bookid
-    else {
-      let searchInAll = this.bookSearch(bookName.toString(), editions)
-        .filter(sr => sr.searchWeight >= bookName.length * 0.7)
-        .filter(book => book !== undefined)
-        .sort((b1, b2) => b2.bookid - b1.bookid);
-      let collapsed: [BollsBible.Book, number][] = [];
-      while (searchInAll.length) {
-        let bid = searchInAll[0].bookid;
-        let count = searchInAll.findIndex(book => book.bookid !== bid);
-        collapsed.push([searchInAll[0], count]);
-        searchInAll.splice(0, count);
-      }
-      let top = collapsed.sort((b1, b2) => b1[1] - b2[1]).pop();
-      return top ? top[0].bookid : undefined
-    }
   }
 
-  static parseReferenses(refs: string, editions: BibleEdition[]): BibleReference[] {
-    return refs.split(',')
-      .reduce((result: BibleReference[], ref, i, _originalRefs) => {
-        let translation: string, foundtranslations: string[] | null = ref.trim().match(/\([A-Z0-9]+\)/);
-        if (foundtranslations && foundtranslations.length) {
-          ref = ref.replace(foundtranslations[0], '').trim();
-          translation = foundtranslations[0].replace(/[\(\)]/g, '');
-        } else {
-          translation = i > 0 ? result[i - 1].edition : DEFAULT_TRANSLATION;
-          ref = ref.trim();
-        }
-        let stances: string[] = ref.split(':'),
-          chapters: number[], bookNum: number = 0, bookName: string;
-        let chapterspreads = stances[0].match(/[0-9 -]+$/);
-        if (chapterspreads && chapterspreads.length) {
-          chapters = spreadNumbers(chapterspreads[0]);
-          bookName = stances[0].replace(chapterspreads[0], '').trim();
-        }
-        else {
-          chapters = i > 0 ? [result[i - 1].chapter] : [1];
-          bookName = stances[0].trim();
-        };
-        if (bookName === '') {
-          bookName = i > 0 ? result[i - 1].bookName : '';
-          bookNum = i > 0 ? result[i - 1].book : 0;
-        } else {
-          bookNum = this.getBookNum(bookName, editions) || 0;
-        }
-        if (bookName && bookNum)
-          chapters.forEach((chapter, i) => {
-            let verses: number[] = [];
-            if (i === chapters.length - 1) {
-              if (stances.length == 2) {
-                verses = spreadNumbers(stances[1].trim());
+  static async parseReferenses(refs: string, editions = this.editions): Promise<BibleReference[]> {
+    return Promise.all(
+      refs.split(',')
+        .reduce((result: BibleReference[], ref, i, _originalRefs) => {
+          let translation: string, foundtranslations: string[] | null = ref.trim().match(/\([A-Z0-9]+\)/);
+          if (foundtranslations && foundtranslations.length) {
+            ref = ref.replace(foundtranslations[0], '').trim();
+            translation = foundtranslations[0].replace(/[\(\)]/g, '');
+          } else {
+            translation = i > 0 ? result[i - 1].edition : DEFAULT_TRANSLATION;
+            ref = ref.trim();
+          }
+          let stances: string[] = ref.split(':'),
+            chapters: number[], bookNum: number | undefined = 0, bookName: string;
+          let chapterspreads = stances[0].match(/[0-9 -]+$/);
+          if (chapterspreads && chapterspreads.length) {
+            chapters = spreadNumbers(chapterspreads[0]);
+            bookName = stances[0].replace(chapterspreads[0], '').trim();
+          }
+          else {
+            chapters = i > 0 ? [result[i - 1].chapter] : [1];
+            bookName = stances[0].trim();
+          };
+          if (bookName === '') {
+            bookName = i > 0 ? result[i - 1].bookName : '';
+            bookNum = i > 0 ? result[i - 1].book : undefined;
+          }
+          if (bookName)
+            chapters.forEach((chapter, i) => {
+              let verses: number[] = [];
+              if (i === chapters.length - 1) {
+                if (stances.length == 2) {
+                  verses = spreadNumbers(stances[1].trim());
+                }
               }
-            }
-            let excerpt: BibleReference = {
-              edition: translation,
-              reference: `${bookName} ${chapter}${verses.length ? `:${stances[1]}` : ''} (${translation})`,
-              bookName,
-              book: bookNum,
-              chapter,
-              selectedVerses: verses
-            };
-            result.push(excerpt)
-          })
-        return result
-      }, [])
+              let excerpt: BibleReference = {
+                edition: translation,
+                reference: `${bookName} ${chapter}${verses.length ? `:${stances[1]}` : ''} (${translation})`,
+                bookName,
+                book: bookNum,
+                chapter,
+                selectedVerses: verses
+              };
+              result.push(excerpt)
+            })
+          return result
+        }, []).map(async br => {
+          let bn = await this.getBookNum(br.bookName, editions);
+          br.book = bn;
+          return br
+        }))
   }
 
-  static getBibleEditions(bollsTranslations: BollsBible.Translations, bollsEditions: BollsBible.EditionBooks): BibleEdition[] {
+  private static getBibleEditions(bollsTranslations: BollsBible.Translations, bollsEditions: BollsBible.EditionBooks): BibleEdition[] {
     return bollsTranslations.map(translation =>
       translation.translations
         .map(edition => {
@@ -163,53 +156,55 @@ export class BibleController implements ReactiveController {
         })).flat();
   }
 
-  async selectLanguages(languages: string[]) {
-    BibleController.editions
-      .then(editions => {
-        this.editions = editions.filter(edition => languages.some(lang => edition.language.includes(lang)));
-      });
+  async parseReferenses(refs: string): Promise<BibleReference[]> {
+    return BibleController.parseReferenses(refs, this.editions);
   }
 
-  parseReferenses(refs: string, editions = this.editions): BibleReference[] {
-    return BibleController.parseReferenses(refs, editions);
-  }
-
-  static refAnchor(ref: { edition: BollsBible.Edition['short_name'], book: number, chapter: number, selectedVerses: number[], reference: string }): string {
-    return `<a href="${getBollsChapterUrl(ref)}">${ref.reference}</a>`
+  static refAnchor(ref: { edition: BollsBible.Edition['short_name'], book: number | undefined, chapter: number, selectedVerses: number[], reference: string }): string {
+    if (ref.book) {
+      return `<a href="${getBollsChapterUrl({ edition: ref.edition, book: ref.book, chapter: ref.chapter, verse: ref.selectedVerses[0] })}">${ref.reference}</a>`
+    } else return ref.reference;
   }
 
   host: ReactiveControllerHost;
 
-  translations: BollsBible.Translations = [];
-  editions: BibleEdition[] = [];
-
-  private _languages: string[] = [];
-  get languages() { return this._languages }
-  set languages(langs: string[]) {
-    this.selectLanguages(this._languages = langs);
+  get editions(): Promise<BibleEdition[]> {
+    return BibleController.editions
+      .then(editions =>
+        editions.filter(edition =>
+          this.languages.some(lang => edition.language.includes(lang))
+        )
+      )
   }
+
+  private languages: string[] = [];
 
   private _reference: string = '';
   get reference() { return this._reference };
   set reference(ref: string) { this.init(ref) }
 
-  excerpts: BibleExcerptData[] = [];
+  excerpts: (BibleReference | BibleExcerptData)[] = [];
 
   init(ref: string) {
-    Promise.all(
-      this.parseReferenses(this._reference = ref)
-        .map(ex => fetchBollsChapter(ex)
-          .then(verses => {
-            return {
-              ...ex,
-              verses
-            }
-          })
-        )
-    )
-      .then(ex => {
-        this.excerpts = ex;
-      }).finally(() => { this.host.requestUpdate() })
+    this.parseReferenses(this._reference = ref)
+      .then(exerpts =>
+        exerpts.map(excerpt =>
+          fetchBollsChapter(excerpt)
+            .then(verses => {
+              if (excerpt.book && verses.length) {
+                return {
+                  ...excerpt,
+                  verses
+                } as BibleExcerptData
+              } else {
+                return excerpt as BibleReference
+              }
+            })
+        ))
+      .then(async ex => {
+        this.excerpts = await Promise.all(ex);
+      })
+      .finally(() => { this.host.requestUpdate() })
   }
 
   constructor(host: ReactiveControllerHost) {

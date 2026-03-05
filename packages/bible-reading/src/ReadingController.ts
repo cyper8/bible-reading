@@ -27,14 +27,14 @@ const objToReadingDay: (object: RawReadingDay) => ReadingDay = (object: RawReadi
 }
 export function isRawReadingDay(obj: Object): obj is RawReadingDay {
   return (
-    "date" in obj && 
-    "reading" in obj && 
-    "questions" in obj && 
+    "date" in obj &&
+    "reading" in obj &&
+    "questions" in obj &&
     "exposition" in obj) && (
-    typeof obj.date === "string" && 
-    typeof obj.reading === "string" &&
-    typeof obj.questions === "string" &&
-    typeof obj.exposition === "string" )
+      typeof obj.date === "string" &&
+      typeof obj.reading === "string" &&
+      typeof obj.questions === "string" &&
+      typeof obj.exposition === "string")
 }
 
 
@@ -51,9 +51,9 @@ export class ReadingController implements ReactiveController {
     this.dataSourse = dataProvider
   }
 
-  loadMonthData(data: RawReadingDay[]) {
+  private loadMonthData(data: RawReadingDay[]) {
     this.month = data
-    .map(reading => objToReadingDay(reading))
+      .map(reading => objToReadingDay(reading))
   }
 
   async setReadingDate(date: Date) {

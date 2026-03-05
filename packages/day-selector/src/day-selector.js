@@ -68,13 +68,11 @@ let DaySelector = class DaySelector extends LitElement {
                 'grid-column': `span ${prevMonth ? firstDayOffset : (nextMonth ? 7 - dayOfWeek : 1)}`
             })}"
           @click="${() => {
-                if (nextMonth || prevMonth || !(isToday || empty)) {
-                    this.date = date;
-                    this.reportData({
-                        date,
-                        ...(dayData || {})
-                    });
-                }
+                this.date = date;
+                this.reportData({
+                    date,
+                    ...(dayData || {})
+                });
             }}">${n}</div>`;
         })}</section>`;
     }

@@ -8,9 +8,8 @@ import { LitElement, css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { getBollsChapterUrl } from '../../utils/bolls.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
-import { BibleController } from './BibleController.js';
+import { BibleController, isBibleExcerpt } from './BibleController.js';
 let BibleExcerpt = class BibleExcerpt extends LitElement {
     constructor() {
         super(...arguments);
@@ -27,7 +26,7 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
       chapter="${verse.chapter}" 
       num="${verse.verse}"
       >
-          ${verse.text}
+          ${unsafeHTML(verse.text)}
           ${verse.comment
             ? html `<b>&darr;</b>  
             <span class="comment">
@@ -40,10 +39,11 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
     }
     bExcerpt(excerpt, hilight = '') {
         let hilighted = hilight ? spreadNumbers(hilight) : [];
-        let url = getBollsChapterUrl(excerpt);
-        return html `<div class="excerpt"><h3><a href=${url}>${excerpt.reference}</a></h3>
-    ${excerpt.verses
-            .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}</div>`;
+        return html `<div class="excerpt"><h3>${unsafeHTML(BibleController.refAnchor(excerpt))}</h3>
+    ${isBibleExcerpt(excerpt)
+            ? excerpt.verses
+                .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
+            : html `<i>Не вдалося завантажити текст</i>`}</div>`;
     }
     willUpdate(_changedProperties) {
         if (_changedProperties.has("reference")) {
@@ -53,7 +53,8 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
         }
     }
     render() {
-        return this.bible.excerpts.map(excerpt => html `<section class="bible">${this.bExcerpt(excerpt, this.hilightVerses)}</section>`);
+        return this.bible.excerpts
+            .map((excerpt) => html `<section class="bible">${this.bExcerpt(excerpt, this.hilightVerses)}</section>`);
     }
     static { this.styles = css `
   * {box-sizing: border-box}

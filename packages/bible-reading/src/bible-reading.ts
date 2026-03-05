@@ -25,6 +25,7 @@ export class BibleReading extends LitElement {
   parseReadingDataFromLightDOM: ReadingDataProvider = (date: Date) => {
     const month = date.getMonth();
     const year = date.getFullYear();
+    const request = date.toDateString();
     const content = this.innerHTML;
     if (content) {
       try {
@@ -33,7 +34,13 @@ export class BibleReading extends LitElement {
           if (data.length && data[0].date) {
             let dataDate = new Date(data[0].date);
             if (dataDate.getMonth() !== month || dataDate.getFullYear() !== year) {
-              window.location.href = window.location.origin+window.location.pathname+`?date=${date.toDateString()}`
+              let params = new URLSearchParams(location.search);
+              if (params.has("date")) {
+                if (params.get("date") == request) {
+                  throw Error(`Server responded with wrong data.`)
+                }
+              }
+              window.location.href = window.location.origin + window.location.pathname + `?date=${request}`
             }
             return data.filter(obj => isRawReadingDay(obj)) as RawReadingDay[]
           }
@@ -45,9 +52,9 @@ export class BibleReading extends LitElement {
     } else return []
   }
 
-  reading = this.innerHTML !== "" ? new ReadingController(this, this.parseReadingDataFromLightDOM) : new ReadingController(this);
 
-  @property({ type: Date }) date: Date = stripHours(new Date());
+  @property({ type: Date }) date?: Date;
+  reading = this.innerHTML !== "" ? new ReadingController(this, this.parseReadingDataFromLightDOM) : new ReadingController(this);
   @property({ type: String }) questions: string = '';
   @property({ type: String }) exposititon: string = '';
 
@@ -127,19 +134,20 @@ export class BibleReading extends LitElement {
   }
 
   async refsToLinks(text: string) {
-    const editions = await BibleController.editions;
     const inlineRef = /\[[^\[\]]+\]/gm;
-    var refs: string[] = (text.match(inlineRef) || [])
+    var refs: string[] = await Promise.all((text.match(inlineRef) || [])
       .map(match => match.substring(1, match.length - 1)) // remove square braces
-      .map(refString => BibleController.parseReferenses(refString, editions))
-      .map(refs => refs.map(ref => BibleController.refAnchor(ref)))
-      .map(refs => refs.length > 1 ? refs.join(", ") : refs[0]);
+      .map(refString => BibleController.parseReferenses(refString)
+        .then(refs => refs
+          .map(ref => BibleController.refAnchor(ref))
+        ).then(refs => refs.length > 1 ? refs.join(", ") : refs[0])
+      ))
     return text.split(inlineRef).map((part, index) => refs[index] ? part + refs[index] : part).join("");
   }
 
   protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void {
     if (_changedProperties.has("date")) {
-      this.reading.setReadingDate(this.date)
+      if (this.date) this.reading.setReadingDate(this.date)
         .then(() => {
           if (this.reading.day) {
             if (this.reading.day.questions) {
@@ -164,6 +172,14 @@ export class BibleReading extends LitElement {
     }
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    let params = new URLSearchParams(location.search);
+    if (params.has("date")) {
+      this.date = stripHours(new Date(params.get("date")!))
+    } else this.date = stripHours(new Date());
+  }
+
   protected updated(_changedProperties: PropertyValues<BibleReading>): void {
     if (_changedProperties.has("questions") || _changedProperties.has("exposititon")) {
       this.activateReferences();
@@ -174,7 +190,7 @@ export class BibleReading extends LitElement {
     return html`<day-selector .month=${this.reading.month} @date-selected="${(event: DateSelectedEvent<ReadingDay>) => {
       this.date = event.detail.date;
     }}"></day-selector>
-    ${this.reading.day
+    ${this.date && this.reading.day
         ? html`${this.greeting(this.date)}
     <p>Сьогодні читаємо:</p>
     <bible-excerpt reference="${this.reading.day.reading}"></bible-excerpt>
