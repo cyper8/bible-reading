@@ -14,7 +14,7 @@ export type ReadingDataProvider = (date: Date) => Promise<RawReadingDay[]> | Raw
 export type ReadingMonth = ReadingDay[];
 
 
-const DEFAULT_READING_SOURCE = "/reading/json";
+const DEFAULT_READING_SOURCE = location.origin+"/json";
 const defaultReadingDataProvider: ReadingDataProvider = (date: Date) => getJSONP<RawReadingDay[]>(DEFAULT_READING_SOURCE, `date=${date.toDateString()}`);
 export const stripHours = (date: Date) => (date.setHours(0, 0, 0, 0), date);
 const objToReadingDay: (object: RawReadingDay) => ReadingDay = (object: RawReadingDay) => {
