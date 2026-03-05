@@ -1,19 +1,16 @@
 {
   "name": "bible-reading",
-  "version": "0.0.3",
-  "type": "module",
-  "main": "./dist/bible-reading.js",
-  "exports": "./dist/bible-reading.js",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "start": "vite",
-    "build": "tsc"
-  },
-  "dependencies": {
-    "lit": "^3.2.1",
-    "marked": "^15.0.6"
+    "build": "tsc -b",
+    "start": "npm run build && npm run start -w bible-reading-demo"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vite": "^6.2.6"
+    "vite": "^7.3.1"
   }
 }

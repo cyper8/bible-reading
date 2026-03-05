@@ -2,8 +2,9 @@
 
 `import "bible-reading"`
 
-`<bible-reading>
-  
+```
+<bible-reading>
+
   _2025-2-12_
   
   # Від Матвія 5:21-32
@@ -16,7 +17,8 @@
   4. Подружні стосунки: як Ісус тлумачить гріх перелюбу? Що таке перелюб?
   5. Як будувати сім'ю і як виховувати свою душу, щоб уникнути розлучення?
 
-</bible-excerpt>`
+</bible-reading>
+```
 
 LitElement based Custom Element that shows bible excerpt from [Bolls Bible API](https://bolls.life)
 
