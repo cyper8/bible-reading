@@ -213,6 +213,40 @@ export class BibleReading extends LitElement {
     a:hover {
       color: var(--bible-excerpt-dark-accent)
     }
+    * {
+    box-sizing: content-box;
+  }
+  
+  :root {
+    --bible-excerpt-color: #fafafa;
+    --bible-excerpt-background: #242424;
+    --bible-excerpt-accent: #59f;
+    --bible-excerpt-dark-accent: #46e;
+    --bible-excerpt-hilight: rgba(200, 200, 200, 0.5);
+    --bible-excerpt-hilight-accent: rgba(200, 225, 255, 0.5);
+  
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+  
+    color-scheme: light dark;
+    color: var(--bible-excerpt-color);
+    background-color: var(--bible-excerpt-background);
+  
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bible-excerpt-color: #242424;
+      --bible-excerpt-background: #fafafa;
+      --bible-excerpt-accent: #59f;
+      --bible-excerpt-dark-accent: #46e;
+    }
+  }
     `
   }
 }
