@@ -8,7 +8,6 @@ import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { styleMap } from "lit/directives/style-map.js";
-/** zero-based day of week (like Date.prototype.getDay) but locale-corrected (if supported by browser) */
 const getLocaleDayOfWeek = (date) => {
     const locale = new Intl.Locale(navigator.language);
     var weekStart;
@@ -41,7 +40,7 @@ let DaySelector = class DaySelector extends LitElement {
         let year = currentDate.getFullYear();
         let today = currentDate.getDate();
         let day1 = new Date(year, month, 1);
-        let firstDayOffset = getLocaleDayOfWeek(day1) || 7; // if the month starts from first weekday, add whole week for "to previous month" option plus compensate
+        let firstDayOffset = getLocaleDayOfWeek(day1) || 7;
         let monthLength = daysInMonth(month, year);
         let calendarDaysData = Array(monthLength + 2).fill(undefined);
         monthData.forEach((day) => {
@@ -97,12 +96,23 @@ let DaySelector = class DaySelector extends LitElement {
     static get styles() {
         return css `
     :host {
+      --_this-color: var(--day-selector-color, #fafafa);
+      --_this-background: var(--day-selector-background, #242424);
+      --_this-hilight: var(--day-selector-hilight, rgba(200,200,200,0.3));
+      --_this-hilight-accent: var(--day-selector-hilight-accent, rgba(200,255,255,0.3));
+
       display: inline-block;
       margin: 0.2em;
       padding: 0.2em;
-      border: solid 1px var(--bible-excerpt-color);
+      border: solid 1px var(--_this-color);
       border-radius: 1.2em;
       line-height: 2em
+    }
+    @media (prefers-color-scheme: light) {
+      :host {
+        --_this-color: var(--day-selector-background, #242424);
+        --_this-background: var(--day-selector-color, #fafafa);
+      }
     }
     #clock.icon {
       position: relative
@@ -114,8 +124,9 @@ let DaySelector = class DaySelector extends LitElement {
       float: left;
       width: 1.5em;
       height: 1.5em;
+      border: solid 1px var(--_this-color);
       border-radius: 50%;
-      background-color: currentColor;
+      background-color: var(--_this-background);
       position: relative;
     }
     #clock.icon::after {
@@ -126,8 +137,8 @@ let DaySelector = class DaySelector extends LitElement {
       border-radius: 0.05em;
       position: absolute;
       left: -1.05em;
-      top: 0.05em;
-      background-color: var(--bible-excerpt-background);
+      top: 0.25em;
+      background-color: currentColor;
       transform-origin: center bottom;
       transform: rotate(35deg);
       transition: transform 2s linear;
@@ -140,8 +151,8 @@ let DaySelector = class DaySelector extends LitElement {
       position: absolute;
       width: auto;
       height: auto;
-      background-color: var(--bible-excerpt-color);
-      color: var(--bible-excerpt-background);
+      background-color: var(--_this-color);
+      color: var(--_this-background);
       border-radius: 1em;
       padding: 1em;
     }
@@ -156,9 +167,9 @@ let DaySelector = class DaySelector extends LitElement {
       .day {
         &:not(.header) {
           &:hover {
-            background-color: var(--bible-excerpt-hilight, rgba(200,200,200,0.3));
+            background-color: var(--_this-hilight);
             &:not(.empty) {
-              background-color: var(--bible-excerpt-hilight-accent, rgba(200,225,255,0.3));
+              background-color: var(--_this-hilight-accent);
             }
           }
         }
@@ -175,11 +186,11 @@ let DaySelector = class DaySelector extends LitElement {
       }
       .rewd::after {
         content: '<<';
-        color: var(--bible-excerpt-background);
+        color: var(--_this-background);
       }
       .ffwd::before {
         content: '>>';
-        color: var(--bible-excerpt-background);
+        color: var(--_this-background);
       }
     }
     `;

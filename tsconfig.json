@@ -1,21 +1,22 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "moduleResolution": "bundler",
+    "target": "es2022",
+    "moduleResolution":"node",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
-    "module": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "esModuleInterop": true,
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "removeComments": true
   },
   "references": [
     {"path": "./packages/bible-excerpt/tsconfig.json"},

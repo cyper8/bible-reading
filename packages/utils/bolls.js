@@ -1,4 +1,3 @@
-/** /bolls/ => https://bolls.life/ */
 export const BOLLS_TRANSLATIONS = 'https://bolls.life/static/bolls/app/views/languages.json';
 export const BOLLS_EDITIONSBOOKS = 'https://bolls.life/static/bolls/app/views/translations_books.json';
 export async function fetchBollsTranslations() {

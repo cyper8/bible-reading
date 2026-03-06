@@ -2,16 +2,6 @@ import { LitElement, PropertyValues } from "lit";
 import "../../bible-excerpt/index.js";
 import "../../day-selector/index.js";
 import { ReadingController, ReadingDataProvider } from "./ReadingController.js";
-/**
- * Custom Element that loads Markdown file with the questions on Bible excerpt
- * and presents the excerpt itself with some extra utility stuff like hilighting
- * verses, referenced in questions.
- * Also it lets user to get month view of readings and load another day's reading
- *
- * @export
- * @class BibleReading
- * @extends {LitElement}
- */
 export declare class BibleReading extends LitElement {
     parseReadingDataFromLightDOM: ReadingDataProvider;
     date?: Date;

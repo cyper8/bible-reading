@@ -12,7 +12,6 @@ export class BibleController {
         return this.getBibleEditions(translations, editions);
     }); }
     static async bookSearch(query, editions = this.editions) {
-        //const MIN_MATCH_LENGTH = 1;
         let selectedBooks = (await editions)
             .map(e => e.books.map(b => {
             return {
@@ -25,7 +24,7 @@ export class BibleController {
         return selectedBooks.reduce((matches, book) => {
             let matchWeight = 0;
             let match = subqueries.filter((subQ) => {
-                if (/[0-9]/.test(subQ)) { // numbers matched completely as they come
+                if (/[0-9]/.test(subQ)) {
                     if (RegExp(subQ.replace(/[^0-9]/g, "")).test(book.name)) {
                         matchWeight += 3;
                         return true;
@@ -34,9 +33,8 @@ export class BibleController {
                         return false;
                 }
                 else {
-                    //if (subQ.length < MIN_MATCH_LENGTH) return true;
                     let matchLength = 0;
-                    var len = 1; //Math.max(Math.floor(subQ.length*0.7), MIN_MATCH_LENGTH);
+                    var len = 1;
                     for (; len <= subQ.length; len++) {
                         let exp = new RegExp(`(?<=\\s|^)${subQ.slice(0, len).replace(/(і|й|и)/gi, "(і|и|й)")}${len == subQ.length ? '(?=\\s|$)' : ''}`, "ig");
                         if (exp.test(book.name)) {

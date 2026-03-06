@@ -108,15 +108,33 @@ export class DaySelector<T extends DayData> extends LitElement {
     `
   }
 
+/**
+ * --day-selector-background
+ * --day-selector-color
+ * --day-selector-hilight
+ * --day-selector-hilight-accent
+ */
+
   static get styles() {
     return css`
     :host {
+      --_this-color: var(--day-selector-color, #fafafa);
+      --_this-background: var(--day-selector-background, #242424);
+      --_this-hilight: var(--day-selector-hilight, rgba(200,200,200,0.3));
+      --_this-hilight-accent: var(--day-selector-hilight-accent, rgba(200,255,255,0.3));
+
       display: inline-block;
       margin: 0.2em;
       padding: 0.2em;
-      border: solid 1px var(--bible-excerpt-color);
+      border: solid 1px var(--_this-color);
       border-radius: 1.2em;
       line-height: 2em
+    }
+    @media (prefers-color-scheme: light) {
+      :host {
+        --_this-color: var(--day-selector-background, #242424);
+        --_this-background: var(--day-selector-color, #fafafa);
+      }
     }
     #clock.icon {
       position: relative
@@ -128,8 +146,9 @@ export class DaySelector<T extends DayData> extends LitElement {
       float: left;
       width: 1.5em;
       height: 1.5em;
+      border: solid 1px var(--_this-color);
       border-radius: 50%;
-      background-color: currentColor;
+      background-color: var(--_this-background);
       position: relative;
     }
     #clock.icon::after {
@@ -140,8 +159,8 @@ export class DaySelector<T extends DayData> extends LitElement {
       border-radius: 0.05em;
       position: absolute;
       left: -1.05em;
-      top: 0.05em;
-      background-color: var(--bible-excerpt-background);
+      top: 0.25em;
+      background-color: currentColor;
       transform-origin: center bottom;
       transform: rotate(35deg);
       transition: transform 2s linear;
@@ -154,8 +173,8 @@ export class DaySelector<T extends DayData> extends LitElement {
       position: absolute;
       width: auto;
       height: auto;
-      background-color: var(--bible-excerpt-color);
-      color: var(--bible-excerpt-background);
+      background-color: var(--_this-color);
+      color: var(--_this-background);
       border-radius: 1em;
       padding: 1em;
     }
@@ -170,9 +189,9 @@ export class DaySelector<T extends DayData> extends LitElement {
       .day {
         &:not(.header) {
           &:hover {
-            background-color: var(--bible-excerpt-hilight, rgba(200,200,200,0.3));
+            background-color: var(--_this-hilight);
             &:not(.empty) {
-              background-color: var(--bible-excerpt-hilight-accent, rgba(200,225,255,0.3));
+              background-color: var(--_this-hilight-accent);
             }
           }
         }
@@ -189,11 +208,11 @@ export class DaySelector<T extends DayData> extends LitElement {
       }
       .rewd::after {
         content: '<<';
-        color: var(--bible-excerpt-background);
+        color: var(--_this-background);
       }
       .ffwd::before {
         content: '>>';
-        color: var(--bible-excerpt-background);
+        color: var(--_this-background);
       }
     }
     `

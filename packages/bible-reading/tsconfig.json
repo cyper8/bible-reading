@@ -2,17 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
     "rootDir": ".",
     "composite": true
   },
   "include": [
     ".",
-    "src",
-    "../bible-excerpt/src/BibleController.ts"
-  ],
+    "src"  ],
   "references": [
     {
       "path": "../bible-excerpt/tsconfig.json"

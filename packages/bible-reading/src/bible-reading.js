@@ -14,16 +14,6 @@ import { ReadingController, isRawReadingDay, stripHours } from "./ReadingControl
 import { BibleController } from "../../bible-excerpt/src/BibleController.js";
 import { pickOneOf } from "../../utils/pickOneOf.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-/**
- * Custom Element that loads Markdown file with the questions on Bible excerpt
- * and presents the excerpt itself with some extra utility stuff like hilighting
- * verses, referenced in questions.
- * Also it lets user to get month view of readings and load another day's reading
- *
- * @export
- * @class BibleReading
- * @extends {LitElement}
- */
 let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     constructor() {
         super(...arguments);
@@ -135,7 +125,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     async refsToLinks(text) {
         const inlineRef = /\[[^\[\]]+\]/gm;
         var refs = await Promise.all((text.match(inlineRef) || [])
-            .map(match => match.substring(1, match.length - 1)) // remove square braces
+            .map(match => match.substring(1, match.length - 1))
             .map(refString => BibleController.parseReferenses(refString)
             .then(refs => refs
             .map(ref => BibleController.refAnchor(ref))).then(refs => refs.length > 1 ? refs.join(", ") : refs[0])));
@@ -202,51 +192,59 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     static get styles() {
         return css `
     :host {
+      --_this-color: var(--bible-reading-color, #fafafa);
+      --_this-background: var(--bible-reading-background, #242424);
+      --_this-accent: var(--bible-reading-accent, #59f);
+      --_this-dark-accent: var(--bible-reading-dark-accent, #46e);
+
+      --bible-excerpt-color: var(--_this-color);
+      --bible-excerpt-background: var(--_this-background);
+      --bible-excerpt-hilight-accent: rgba(200, 225, 255, 0.3);
+      --bible-excerpt-hilight: rgba(200, 200, 200, 0.3);
+      --bible-excerpt-accent: var(--_this-accent);
+      --bible-excerpt-dark-accent: var(--_this-dark-accent);
+
+      --day-selector-background: var(--_this-background);
+      --day-selector-color: var(--_this-color);
+      --day-selector-hilight: var(--bible-excerpt-hilight);
+      --day-selector-hilight-accent: var(--bible-excerpt-hilight-accent);
+
+      box-sizing: border-box;
+
+      font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      font-weight: 400;
+    
+      color-scheme: light dark;
+      color: var(--_this-color);
+      background-color: var(--_this-background);
+    
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+
       display: block;
       padding: 1em;
     }
+    @media (prefers-color-scheme: light) {
+      :host {
+        --_this-color: var(--bible-reading-background,  #242424);
+        --_this-background: var(--bible-reading-color, #fafafa);
+        --bible-excerpt-color: var(--_this-background);
+        --bible-excerpt-background: var(--_this-color);
+        --day-selector-color: var(--_this-background);
+        --day-selector-background: var(--_this-color);
+      }
+    }
     a {
       font-weight: 500;
-      color: var(--bible-excerpt-accent);
+      color: var(--_this-accent);
       text-decoration: inherit;
     }
     a:hover {
-      color: var(--bible-excerpt-dark-accent)
+      color: var(--_this-dark-accent);
     }
-    * {
-    box-sizing: content-box;
-  }
-  
-  :root {
-    --bible-excerpt-color: #fafafa;
-    --bible-excerpt-background: #242424;
-    --bible-excerpt-accent: #59f;
-    --bible-excerpt-dark-accent: #46e;
-    --bible-excerpt-hilight: rgba(200, 200, 200, 0.5);
-    --bible-excerpt-hilight-accent: rgba(200, 225, 255, 0.5);
-  
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-  
-    color-scheme: light dark;
-    color: var(--bible-excerpt-color);
-    background-color: var(--bible-excerpt-background);
-  
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bible-excerpt-color: #242424;
-      --bible-excerpt-background: #fafafa;
-      --bible-excerpt-accent: #59f;
-      --bible-excerpt-dark-accent: #46e;
-    }
-  }
     `;
     }
 };

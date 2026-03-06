@@ -1,4 +1,3 @@
-/** /bolls/ => https://bolls.life/ */
 export declare const BOLLS_TRANSLATIONS = "https://bolls.life/static/bolls/app/views/languages.json";
 export declare const BOLLS_EDITIONSBOOKS = "https://bolls.life/static/bolls/app/views/translations_books.json";
 export declare namespace BollsBible {
