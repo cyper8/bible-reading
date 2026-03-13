@@ -48,7 +48,7 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
     willUpdate(_changedProperties) {
         if (_changedProperties.has("reference")) {
             if (this.reference !== this.bible.reference) {
-                this.bible.init(this.reference);
+                this.bible.reference = this.reference;
             }
         }
     }
@@ -133,6 +133,9 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
 
   `]; }
 };
+__decorate([
+    property({ type: Object })
+], BibleExcerpt.prototype, "bible", void 0);
 __decorate([
     property({ type: String, attribute: 'hilight-verses' })
 ], BibleExcerpt.prototype, "hilightVerses", void 0);

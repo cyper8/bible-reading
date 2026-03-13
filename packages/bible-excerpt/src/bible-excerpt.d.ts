@@ -1,7 +1,11 @@
 import { LitElement, PropertyValues } from 'lit';
-import { BibleController } from './BibleController.js';
+import { BibleExcerptData, BibleReference } from './BibleController.js';
+export interface BibleDataSource {
+    reference: string;
+    excerpts: (BibleExcerptData | BibleReference)[];
+}
 export declare class BibleExcerpt extends LitElement {
-    bible: BibleController;
+    bible: BibleDataSource;
     hilightVerses: string;
     reference: string;
     private bChapterVerse;

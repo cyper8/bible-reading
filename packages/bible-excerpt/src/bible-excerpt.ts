@@ -2,13 +2,18 @@ import { LitElement, PropertyValues, css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { type BollsBible } from '../../utils/bolls.js';
+import { BibleExcerptData, type BollsBible } from '../../utils/bolls.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
-import { BibleController, BibleExcerptData, BibleReference, isBibleExcerpt } from './BibleController.js';
+import { BibleController } from './BibleController.js';
+
+export interface BibleDataSource {
+  reference: string
+  excerpts: BibleExcerptData[]
+}
 
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
-  bible = new BibleController(this);
+  @property({ type: Object}) bible: BibleDataSource = new BibleController(this);
   @property({ type: String, attribute: 'hilight-verses' }) hilightVerses: string = '';
   @property({ type: String }) reference: string = '';
 
@@ -33,19 +38,21 @@ export class BibleExcerpt extends LitElement {
     </label>`
   }
 
-  private bExcerpt(excerpt: BibleReference | BibleExcerptData, hilight: string = '') {
+  private bExcerpt(excerpt: BibleExcerptData, hilight: string = '') {
     let hilighted = hilight ? spreadNumbers(hilight) : [];
-    return html`<div class="excerpt"><h3>${unsafeHTML(BibleController.refAnchor(excerpt))}</h3>
-    ${isBibleExcerpt(excerpt)
-        ? excerpt.verses
+    return html`<div class="excerpt"><h3>${unsafeHTML(BibleController.refAnchor({
+      ...excerpt,
+      verse: excerpt.verses?.[0]
+    }))}</h3>
+    ${excerpt.versesData
           .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
-        : html`<i>Не вдалося завантажити текст</i>`}</div>`
+      }</div>`
   }
 
   protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void {
     if (_changedProperties.has("reference")) {
       if (this.reference !== this.bible.reference) {
-        this.bible.init(this.reference);
+        this.bible.reference = this.reference;
       }
     }
   }
