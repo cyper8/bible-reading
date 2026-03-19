@@ -40,13 +40,14 @@ export class BibleExcerpt extends LitElement {
 
   private bExcerpt(excerpt: BibleExcerptData, hilight: string = '') {
     let hilighted = hilight ? spreadNumbers(hilight) : [];
-    return html`<div class="excerpt"><h3>${unsafeHTML(BibleController.refAnchor({
-      ...excerpt,
-      verse: excerpt.verses?.[0]
-    }))}</h3>
-    ${excerpt.versesData
-          .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
-      }</div>`
+    return html`<div class="excerpt"><h3>${
+      unsafeHTML(BibleController.refAnchor({
+        ...excerpt,
+        verse: excerpt.verses?.[0]
+      }))
+    }</h3>${
+      excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
+    }</div>`
   }
 
   protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void {

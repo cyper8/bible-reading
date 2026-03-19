@@ -42,8 +42,26 @@ export function isRawReadingDay(obj: Object): obj is RawReadingDay {
 export class ReadingController implements ReactiveController {
 
   host: ReactiveControllerHost;
+
+  private _date: Date = stripHours(new Date());
+  get date() {return this._date};
+  set date(date: Date) {
+    const d = stripHours(date);
+    this._date = d;
+    Promise.resolve(
+      this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth()) ?
+      this.dataSourse(date) :
+      this.month
+    )
+    .then(rawdays => {
+      this.month = rawdays.map(rawday => objToReadingDay(rawday));
+      this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
+      this.host.requestUpdate();
+    })
+  }
   month: ReadingMonth = [];
   day?: ReadingDay;
+  
   private dataSourse: ReadingDataProvider;
 
   constructor(host: ReactiveControllerHost, dataProvider: ReadingDataProvider = defaultReadingDataProvider) {
@@ -51,22 +69,12 @@ export class ReadingController implements ReactiveController {
     this.dataSourse = dataProvider
   }
 
-  private loadMonthData(data: RawReadingDay[]) {
-    this.month = data
-      .map(reading => objToReadingDay(reading))
+  hostConnected(): void {
+    let params = new URLSearchParams(location.search);
+    if (params.has("date")) {
+      this.date = stripHours(new Date(params.get("date")!))
+    } else this.date = stripHours(new Date());
   }
-
-  async setReadingDate(date: Date) {
-    const d = stripHours(date);
-    if (this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth())) {
-      let month = await Promise.resolve(this.dataSourse(date));
-      this.loadMonthData(month);
-    }
-    this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
-    this.host.requestUpdate();
-  }
-
-  hostConnected(): void { }
   hostDisconnected(): void { }
   hostUpdate(): void { }
   hostUpdated(): void { }

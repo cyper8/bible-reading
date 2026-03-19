@@ -3,11 +3,17 @@ import { customElement, property } from "lit/decorators.js";
 import { marked } from "marked";
 import "../../bible-excerpt/index.js";
 import "../../day-selector/index.js";
-import { RawReadingDay, ReadingController, ReadingDataProvider, ReadingDay, isRawReadingDay, stripHours } from "./ReadingController.js";
+import { RawReadingDay, ReadingController, ReadingDataProvider, ReadingDay, ReadingMonth, isRawReadingDay, stripHours } from "./ReadingController.js";
 import { BibleController } from "../../bible-excerpt/src/BibleController.js";
 import { pickOneOf } from "../../utils/pickOneOf.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { DateSelectedEvent } from "../../day-selector/src/day-selector.js";
+
+export interface ReadingDataSource {
+  date: Date;
+  month: ReadingMonth;
+  day: ReadingDay
+}
 
 /**
  * Custom Element that loads Markdown file with the questions on Bible excerpt
@@ -52,9 +58,7 @@ export class BibleReading extends LitElement {
     } else return []
   }
 
-
-  @property({ type: Date }) date?: Date;
-  reading = this.innerHTML !== "" ? new ReadingController(this, this.parseReadingDataFromLightDOM) : new ReadingController(this);
+  @property({ type: Object }) reading: ReadingDataSource = new ReadingController(this, this.innerHTML !== "" ? this.parseReadingDataFromLightDOM : undefined);
   @property({ type: String }) questions: string = '';
   @property({ type: String }) exposititon: string = '';
 
@@ -146,9 +150,7 @@ export class BibleReading extends LitElement {
   }
 
   protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void {
-    if (_changedProperties.has("date")) {
-      if (this.date) this.reading.setReadingDate(this.date)
-        .then(() => {
+    if (_changedProperties.has("reading")) {
           if (this.reading.day) {
             if (this.reading.day.questions) {
               marked.parse(this.reading.day.questions, { async: true })
@@ -168,16 +170,7 @@ export class BibleReading extends LitElement {
             this.questions = '';
             this.exposititon = '';
           }
-        });
     }
-  }
-
-  connectedCallback(): void {
-    super.connectedCallback();
-    let params = new URLSearchParams(location.search);
-    if (params.has("date")) {
-      this.date = stripHours(new Date(params.get("date")!))
-    } else this.date = stripHours(new Date());
   }
 
   protected updated(_changedProperties: PropertyValues<BibleReading>): void {
@@ -188,10 +181,10 @@ export class BibleReading extends LitElement {
 
   protected render(): unknown {
     return html`<day-selector .month=${this.reading.month} @date-selected="${(event: DateSelectedEvent<ReadingDay>) => {
-      this.date = event.detail.date;
+      this.reading.date = event.detail.date;
     }}"></day-selector>
-    ${this.date && this.reading.day
-        ? html`${this.greeting(this.date)}
+    ${this.reading.day
+        ? html`${this.greeting(this.reading.day.date)}
     <p>Сьогодні читаємо:</p>
     <bible-excerpt reference="${this.reading.day.reading}"></bible-excerpt>
     ${unsafeHTML(this.questions)}

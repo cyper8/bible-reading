@@ -9,7 +9,7 @@ import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
-import { BibleController, isBibleExcerpt } from './BibleController.js';
+import { BibleController } from './BibleController.js';
 let BibleExcerpt = class BibleExcerpt extends LitElement {
     constructor() {
         super(...arguments);
@@ -39,11 +39,10 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
     }
     bExcerpt(excerpt, hilight = '') {
         let hilighted = hilight ? spreadNumbers(hilight) : [];
-        return html `<div class="excerpt"><h3>${unsafeHTML(BibleController.refAnchor(excerpt))}</h3>
-    ${isBibleExcerpt(excerpt)
-            ? excerpt.verses
-                .map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
-            : html `<i>Не вдалося завантажити текст</i>`}</div>`;
+        return html `<div class="excerpt"><h3>${unsafeHTML(BibleController.refAnchor({
+            ...excerpt,
+            verse: excerpt.verses?.[0]
+        }))}</h3>${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}</div>`;
     }
     willUpdate(_changedProperties) {
         if (_changedProperties.has("reference")) {

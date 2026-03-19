@@ -10,7 +10,7 @@ import { customElement, property } from "lit/decorators.js";
 import { marked } from "marked";
 import "../../bible-excerpt/index.js";
 import "../../day-selector/index.js";
-import { ReadingController, isRawReadingDay, stripHours } from "./ReadingController.js";
+import { ReadingController, isRawReadingDay } from "./ReadingController.js";
 import { BibleController } from "../../bible-excerpt/src/BibleController.js";
 import { pickOneOf } from "../../utils/pickOneOf.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
@@ -49,7 +49,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
             else
                 return [];
         };
-        this.reading = this.innerHTML !== "" ? new ReadingController(this, this.parseReadingDataFromLightDOM) : new ReadingController(this);
+        this.reading = new ReadingController(this, this.innerHTML !== "" ? this.parseReadingDataFromLightDOM : undefined);
         this.questions = '';
         this.exposititon = '';
     }
@@ -132,45 +132,32 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
         return text.split(inlineRef).map((part, index) => refs[index] ? part + refs[index] : part).join("");
     }
     willUpdate(_changedProperties) {
-        if (_changedProperties.has("date")) {
-            if (this.date)
-                this.reading.setReadingDate(this.date)
-                    .then(() => {
-                    if (this.reading.day) {
-                        if (this.reading.day.questions) {
-                            marked.parse(this.reading.day.questions, { async: true })
-                                .then(content => this.refsToLinks(content))
-                                .then(content => {
-                                this.questions = content;
-                            });
-                        }
-                        else
-                            this.questions = '';
-                        if (this.reading.day.exposition) {
-                            marked.parse(this.reading.day.exposition, { async: true })
-                                .then(content => this.refsToLinks(content))
-                                .then(content => {
-                                this.exposititon = content;
-                            });
-                        }
-                        else
-                            this.exposititon = '';
-                    }
-                    else {
-                        this.questions = '';
-                        this.exposititon = '';
-                    }
-                });
+        if (_changedProperties.has("reading")) {
+            if (this.reading.day) {
+                if (this.reading.day.questions) {
+                    marked.parse(this.reading.day.questions, { async: true })
+                        .then(content => this.refsToLinks(content))
+                        .then(content => {
+                        this.questions = content;
+                    });
+                }
+                else
+                    this.questions = '';
+                if (this.reading.day.exposition) {
+                    marked.parse(this.reading.day.exposition, { async: true })
+                        .then(content => this.refsToLinks(content))
+                        .then(content => {
+                        this.exposititon = content;
+                    });
+                }
+                else
+                    this.exposititon = '';
+            }
+            else {
+                this.questions = '';
+                this.exposititon = '';
+            }
         }
-    }
-    connectedCallback() {
-        super.connectedCallback();
-        let params = new URLSearchParams(location.search);
-        if (params.has("date")) {
-            this.date = stripHours(new Date(params.get("date")));
-        }
-        else
-            this.date = stripHours(new Date());
     }
     updated(_changedProperties) {
         if (_changedProperties.has("questions") || _changedProperties.has("exposititon")) {
@@ -179,10 +166,10 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     }
     render() {
         return html `<day-selector .month=${this.reading.month} @date-selected="${(event) => {
-            this.date = event.detail.date;
+            this.reading.date = event.detail.date;
         }}"></day-selector>
-    ${this.date && this.reading.day
-            ? html `${this.greeting(this.date)}
+    ${this.reading.day
+            ? html `${this.greeting(this.reading.day.date)}
     <p>Сьогодні читаємо:</p>
     <bible-excerpt reference="${this.reading.day.reading}"></bible-excerpt>
     ${unsafeHTML(this.questions)}
@@ -249,8 +236,8 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     }
 };
 __decorate([
-    property({ type: Date })
-], BibleReading.prototype, "date", void 0);
+    property({ type: Object })
+], BibleReading.prototype, "reading", void 0);
 __decorate([
     property({ type: String })
 ], BibleReading.prototype, "questions", void 0);

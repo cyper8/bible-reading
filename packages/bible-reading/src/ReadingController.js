@@ -20,25 +20,34 @@ export function isRawReadingDay(obj) {
         typeof obj.exposition === "string");
 }
 export class ReadingController {
+    get date() { return this._date; }
+    ;
+    set date(date) {
+        const d = stripHours(date);
+        this._date = d;
+        Promise.resolve(this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth()) ?
+            this.dataSourse(date) :
+            this.month)
+            .then(rawdays => {
+            this.month = rawdays.map(rawday => objToReadingDay(rawday));
+            this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
+            this.host.requestUpdate();
+        });
+    }
     constructor(host, dataProvider = defaultReadingDataProvider) {
+        this._date = stripHours(new Date());
         this.month = [];
         this.host = host;
         this.dataSourse = dataProvider;
     }
-    loadMonthData(data) {
-        this.month = data
-            .map(reading => objToReadingDay(reading));
-    }
-    async setReadingDate(date) {
-        const d = stripHours(date);
-        if (this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth())) {
-            let month = await Promise.resolve(this.dataSourse(date));
-            this.loadMonthData(month);
+    hostConnected() {
+        let params = new URLSearchParams(location.search);
+        if (params.has("date")) {
+            this.date = stripHours(new Date(params.get("date")));
         }
-        this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
-        this.host.requestUpdate();
+        else
+            this.date = stripHours(new Date());
     }
-    hostConnected() { }
     hostDisconnected() { }
     hostUpdate() { }
     hostUpdated() { }

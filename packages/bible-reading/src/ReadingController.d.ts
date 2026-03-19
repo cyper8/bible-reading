@@ -15,12 +15,13 @@ export declare const stripHours: (date: Date) => Date;
 export declare function isRawReadingDay(obj: Object): obj is RawReadingDay;
 export declare class ReadingController implements ReactiveController {
     host: ReactiveControllerHost;
+    private _date;
+    get date(): Date;
+    set date(date: Date);
     month: ReadingMonth;
     day?: ReadingDay;
     private dataSourse;
     constructor(host: ReactiveControllerHost, dataProvider?: ReadingDataProvider);
-    private loadMonthData;
-    setReadingDate(date: Date): Promise<void>;
     hostConnected(): void;
     hostDisconnected(): void;
     hostUpdate(): void;

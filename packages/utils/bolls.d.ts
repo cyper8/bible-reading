@@ -1,5 +1,3 @@
-export declare const BOLLS_TRANSLATIONS = "https://bolls.life/static/bolls/app/views/languages.json";
-export declare const BOLLS_EDITIONSBOOKS = "https://bolls.life/static/bolls/app/views/translations_books.json";
 export declare namespace BollsBible {
     interface Verse {
         pk: number;
@@ -14,7 +12,7 @@ export declare namespace BollsBible {
     interface ChapterVerse extends Verse {
         comment?: string;
     }
-    interface Edition {
+    interface Translation {
         short_name: string;
         full_name: string;
         commentaries?: boolean;
@@ -22,9 +20,9 @@ export declare namespace BollsBible {
         info?: string;
         dir?: 'rtl' | 'ltr';
     }
-    interface Translation {
+    interface L10n {
         language: string;
-        translations: Edition[];
+        translations: Translation[];
     }
     interface Book {
         bookid: number;
@@ -32,23 +30,62 @@ export declare namespace BollsBible {
         name: string;
         chapter: number;
     }
-    type Translations = Translation[];
-    type EditionBooks = {
-        [edition in Edition["short_name"]]: Book[];
+    type BooksIndex = {
+        [edition in Translation["short_name"]]: Book[];
     };
-    type ChapterVerses = ChapterVerse[];
 }
-export declare function fetchBollsTranslations(): Promise<BollsBible.Translations>;
-export declare function fetchBollsEditionBooks(): Promise<BollsBible.EditionBooks>;
-export declare function fetchBollsChapter({ edition, book, chapter }: {
-    edition: BollsBible.Edition['short_name'];
-    book: number | undefined;
+export interface BookSearchResult extends BollsBible.Book {
+    translation: BollsBible.Translation['short_name'];
+    searchWeight: number;
+}
+export interface BibleEdition extends BollsBible.Translation {
+    language: string;
+    books: BollsBible.Book[];
+}
+export interface BibleReference {
+    translation?: BollsBible.Translation["short_name"];
+    reference: string;
+    bookName: string;
     chapter: number;
-}): Promise<BollsBible.ChapterVerses>;
-export declare function getBollsChapterUrl({ edition, book, chapter, verse }: {
-    edition: BollsBible.Edition['short_name'];
-    book: number;
-    chapter: number;
-    verse?: number;
-}): string;
+    verses?: number[];
+}
+export interface BibleExcerptData extends BibleReference {
+    translation: string;
+    bookNum: number;
+    versesData: BollsBible.ChapterVerse[];
+}
+export declare class BollsController {
+    static BOLLS_HOSTNAME: string;
+    static BOLLS_TRANSLATIONSINDEX: string;
+    static BOLLS_TRANSLATIONSBOOKS: string;
+    static DEFAULT_TRANSLATION: string;
+    readonly selectedLanguages?: string[];
+    readonly selectedTranslations?: string[];
+    library: Promise<BibleEdition[]>;
+    constructor({ languages, translations }: {
+        languages?: string[];
+        translations?: string[];
+    });
+    static getBollsHomepage(translation?: string): string;
+    static fetchBollsTranslationsIndex(): Promise<BollsBible.L10n[]>;
+    static fetchBollsTranslationsBooks({ languages, translations }: {
+        languages: string[];
+        translations: BollsBible.Translation['short_name'][];
+    }): Promise<BibleEdition[]>;
+    static fetchBollsTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]>;
+    static fetchBollsChapter({ translation, bookNum, chapter }: {
+        translation: BollsBible.Translation['short_name'];
+        bookNum: number;
+        chapter: number;
+    }): Promise<BollsBible.ChapterVerse[]>;
+    static getBollsChapterUrl({ translation, bookNum, chapter, verse }: {
+        translation: BollsBible.Translation['short_name'];
+        bookNum: number;
+        chapter: number;
+        verse?: number;
+    }): string;
+    bookSearch(query: string): Promise<BookSearchResult[]>;
+    getBook(bookName: string): Promise<BookSearchResult>;
+    getExcerpt(ref: BibleReference): Promise<BibleExcerptData>;
+}
 //# sourceMappingURL=bolls.d.ts.map

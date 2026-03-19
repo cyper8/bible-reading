@@ -1,8 +1,8 @@
 import { LitElement, PropertyValues } from 'lit';
-import { BibleExcerptData, BibleReference } from './BibleController.js';
+import { BibleExcerptData } from '../../utils/bolls.js';
 export interface BibleDataSource {
     reference: string;
-    excerpts: (BibleExcerptData | BibleReference)[];
+    excerpts: BibleExcerptData[];
 }
 export declare class BibleExcerpt extends LitElement {
     bible: BibleDataSource;

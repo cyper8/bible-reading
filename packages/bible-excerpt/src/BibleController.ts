@@ -1,10 +1,9 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
 import { BibleExcerptData, BibleReference, BollsBible, BollsController} from "../../utils/bolls.js";
 import { spreadNumbers } from "../../utils/spreadNumbers.js";
+import { type BibleDataSource } from './bible-excerpt.js';
 
-
-
-export class BibleController implements ReactiveController {
+export class BibleController implements ReactiveController, BibleDataSource {
   remote = new BollsController({languages: ['Ukrainian']})
 
   static parseReferenses(refs: string): BibleReference[] {
@@ -64,11 +63,7 @@ export class BibleController implements ReactiveController {
   
   private _reference: string = '';
   get reference() { return this._reference };
-  set reference(ref: string) { this.init(ref) }
-
-  excerpts: BibleExcerptData[] = [];
-
-  init(ref: string) {
+  set reference(ref: string) {
     Promise.all(
       BibleController.parseReferenses(this._reference = ref)
       .map(ref =>
@@ -78,6 +73,8 @@ export class BibleController implements ReactiveController {
     .then(excerpts => this.excerpts = excerpts)
     .finally(() => { this.host.requestUpdate() })
   }
+
+  excerpts: BibleExcerptData[] = [];
 
   constructor(host: ReactiveControllerHost) {
     this.host = host;
