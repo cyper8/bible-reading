@@ -1,6 +1,3 @@
-import { getJSONP } from "../../utils/getJSONP.js";
-const DEFAULT_READING_SOURCE = location.origin + "/json";
-const defaultReadingDataProvider = (date) => getJSONP(DEFAULT_READING_SOURCE, `date=${date.toDateString()}`);
 export const stripHours = (date) => (date.setHours(0, 0, 0, 0), date);
 const objToReadingDay = (object) => {
     return {
@@ -25,16 +22,17 @@ export class ReadingController {
     set date(date) {
         const d = stripHours(date);
         this._date = d;
-        Promise.resolve(this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth()) ?
-            this.dataSourse(date) :
-            this.month)
-            .then(rawdays => {
-            this.month = rawdays.map(rawday => objToReadingDay(rawday));
+        Promise.resolve(this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth())
+            ? Promise.resolve(this.dataSourse(date))
+                .then(rawdays => rawdays.map(rawday => objToReadingDay(rawday)))
+            : this.month)
+            .then(days => {
+            this.month = days;
             this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
             this.host.requestUpdate();
         });
     }
-    constructor(host, dataProvider = defaultReadingDataProvider) {
+    constructor(host, dataProvider) {
         this._date = stripHours(new Date());
         this.month = [];
         this.host = host;

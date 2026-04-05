@@ -50,40 +50,33 @@ export interface BibleReference {
     verses?: number[];
 }
 export interface BibleExcerptData extends BibleReference {
-    translation: string;
+    translation: BollsBible.Translation["short_name"];
     bookNum: number;
     versesData: BollsBible.ChapterVerse[];
+    url: string;
 }
 export declare class BollsController {
-    static BOLLS_HOSTNAME: string;
-    static BOLLS_TRANSLATIONSINDEX: string;
-    static BOLLS_TRANSLATIONSBOOKS: string;
+    static API_ROOT: string;
+    static TRANSLATIONSINDEX_URL: string;
+    static TRANSLATIONSBOOKS_URL: string;
     static DEFAULT_TRANSLATION: string;
-    readonly selectedLanguages?: string[];
-    readonly selectedTranslations?: string[];
+    selectedLanguages: string[];
+    selectedTranslations: string[];
+    defaultTranslation: string;
     library: Promise<BibleEdition[]>;
-    constructor({ languages, translations }: {
-        languages?: string[];
-        translations?: string[];
-    });
+    constructor(defaultTranslation: string, languages?: string[], translations?: string[]);
     static getBollsHomepage(translation?: string): string;
-    static fetchBollsTranslationsIndex(): Promise<BollsBible.L10n[]>;
-    static fetchBollsTranslationsBooks({ languages, translations }: {
+    static fetchTranslationsIndex(): Promise<BollsBible.L10n[]>;
+    static fetchTranslationsBooks(): Promise<BollsBible.BooksIndex>;
+    getBibleEditions({ languages, translations }: {
         languages: string[];
         translations: BollsBible.Translation['short_name'][];
     }): Promise<BibleEdition[]>;
-    static fetchBollsTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]>;
-    static fetchBollsChapter({ translation, bookNum, chapter }: {
-        translation: BollsBible.Translation['short_name'];
-        bookNum: number;
-        chapter: number;
-    }): Promise<BollsBible.ChapterVerse[]>;
-    static getBollsChapterUrl({ translation, bookNum, chapter, verse }: {
-        translation: BollsBible.Translation['short_name'];
-        bookNum: number;
-        chapter: number;
-        verse?: number;
-    }): string;
+    static fetchTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]>;
+    static fetchChapter(translation: string, book: number, chapter: number): Promise<BollsBible.ChapterVerse[]>;
+    fetchChapter(ref: BibleReference): Promise<BollsBible.ChapterVerse[]>;
+    static getChapterUrl(translation: string, book: number, chapter: number, verse?: number): string;
+    getChapterUrl(ref: BibleReference): Promise<string>;
     bookSearch(query: string): Promise<BookSearchResult[]>;
     getBook(bookName: string): Promise<BookSearchResult>;
     getExcerpt(ref: BibleReference): Promise<BibleExcerptData>;

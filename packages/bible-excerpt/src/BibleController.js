@@ -1,6 +1,8 @@
 import { BollsController } from "../../utils/bolls.js";
 import { spreadNumbers } from "../../utils/spreadNumbers.js";
+const DEFAULT_TRANSLATION = 'UBIO';
 export class BibleController {
+    static { this.remote = new BollsController(DEFAULT_TRANSLATION, ['Ukrainian']); }
     static parseReferenses(refs) {
         return refs.split(',')
             .reduce((result, ref, i, _originalRefs) => {
@@ -37,7 +39,7 @@ export class BibleController {
                     }
                     let excerpt = {
                         translation: translation,
-                        reference: `${bookName} ${chapter}${verses.length ? `:${stances[1]}` : ''} (${translation})`,
+                        reference: `${bookName} ${chapter}${verses.length ? `:${stances[1]}` : ''}${translation ? ` (${translation})` : ''}`,
                         bookName,
                         chapter,
                         verses
@@ -47,22 +49,21 @@ export class BibleController {
             return result;
         }, []);
     }
-    static refAnchor({ translation, bookNum, chapter, verse, reference }) {
-        let url = BollsController.getBollsChapterUrl({
-            translation, bookNum, chapter, verse
-        });
-        return `<a href="${url}">${reference}</a>`;
+    static async parseExcerpts(refs) {
+        return Promise.all(this.parseReferenses(refs).map(ref => this.remote.getExcerpt(ref)));
+    }
+    static async refAnchor(ref) {
+        let url = await this.remote.getChapterUrl(ref);
+        return `<a href="${url}">${ref.reference}</a>`;
     }
     get reference() { return this._reference; }
     ;
     set reference(ref) {
-        Promise.all(BibleController.parseReferenses(this._reference = ref)
-            .map(ref => this.remote.getExcerpt(ref)))
+        BibleController.parseExcerpts(ref)
             .then(excerpts => this.excerpts = excerpts)
             .finally(() => { this.host.requestUpdate(); });
     }
     constructor(host) {
-        this.remote = new BollsController({ languages: ['Ukrainian'] });
         this._reference = '';
         this.excerpts = [];
         this.host = host;

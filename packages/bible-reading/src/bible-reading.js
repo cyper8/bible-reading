@@ -14,9 +14,11 @@ import { ReadingController, isRawReadingDay } from "./ReadingController.js";
 import { BibleController } from "../../bible-excerpt/src/BibleController.js";
 import { pickOneOf } from "../../utils/pickOneOf.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import { getJSONP } from "../../utils/getJSONP.js";
 let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     constructor() {
         super(...arguments);
+        this.getReadingDataFromServer = (date) => this.datasource ? getJSONP(this.datasource, `date=${date.toDateString()}`) : Promise.resolve([]);
         this.parseReadingDataFromLightDOM = (date) => {
             const month = date.getMonth();
             const year = date.getFullYear();
@@ -28,14 +30,14 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
                     if (data instanceof Array) {
                         if (data.length && data[0].date) {
                             let dataDate = new Date(data[0].date);
-                            if (dataDate.getMonth() !== month || dataDate.getFullYear() !== year) {
+                            if (dataDate.getMonth() !== month || dataDate.getFullYear() !== year && this.datasource) {
                                 let params = new URLSearchParams(location.search);
                                 if (params.has("date")) {
                                     if (params.get("date") == request) {
                                         throw Error(`Server responded with wrong data.`);
                                     }
                                 }
-                                window.location.href = window.location.origin + window.location.pathname + `?date=${request}`;
+                                window.location.href = this.datasource + `?date=${request}`;
                             }
                             return data.filter(obj => isRawReadingDay(obj));
                         }
@@ -49,7 +51,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
             else
                 return [];
         };
-        this.reading = new ReadingController(this, this.innerHTML !== "" ? this.parseReadingDataFromLightDOM : undefined);
+        this.reading = new ReadingController(this, this.innerHTML !== "" ? this.parseReadingDataFromLightDOM : this.getReadingDataFromServer);
         this.questions = '';
         this.exposititon = '';
     }
@@ -122,41 +124,42 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
         let hours = date.getHours(), time = hours > 15 ? "вечір" : hours > 10 ? "день" : "ранок";
         return html `<h2>${pickOneOf(BibleReading_1.greetings).replace("ранок", time)}, ${pickOneOf(BibleReading_1.appeals)}!</h2>`;
     }
-    async refsToLinks(text) {
+    async parseLinks(text) {
         const inlineRef = /\[[^\[\]]+\]/gm;
-        var refs = await Promise.all((text.match(inlineRef) || [])
+        var refGroups = await Promise.all((text.match(inlineRef) || [])
             .map(match => match.substring(1, match.length - 1))
-            .map(refString => BibleController.parseReferenses(refString)
-            .then(refs => refs
-            .map(ref => BibleController.refAnchor(ref))).then(refs => refs.length > 1 ? refs.join(", ") : refs[0])));
-        return text.split(inlineRef).map((part, index) => refs[index] ? part + refs[index] : part).join("");
+            .map(refString => BibleController.parseReferenses(refString))
+            .map(async (refs) => {
+            let links = await Promise.all(refs.map(ref => BibleController.refAnchor(ref)));
+            return links.join(", ");
+        }));
+        return text.split(inlineRef).map((part, index) => refGroups[index] ? part + refGroups[index] : part).join("");
+    }
+    parseMarkdown(content) {
+        return marked.parse(content, { async: false });
     }
     willUpdate(_changedProperties) {
-        if (_changedProperties.has("reading")) {
-            if (this.reading.day) {
-                if (this.reading.day.questions) {
-                    marked.parse(this.reading.day.questions, { async: true })
-                        .then(content => this.refsToLinks(content))
-                        .then(content => {
-                        this.questions = content;
-                    });
-                }
-                else
-                    this.questions = '';
-                if (this.reading.day.exposition) {
-                    marked.parse(this.reading.day.exposition, { async: true })
-                        .then(content => this.refsToLinks(content))
-                        .then(content => {
-                        this.exposititon = content;
-                    });
-                }
-                else
-                    this.exposititon = '';
+        if (this.reading.day) {
+            if (this.reading.day.questions) {
+                this.parseLinks(this.parseMarkdown(this.reading.day.questions))
+                    .then(content => {
+                    this.questions = content;
+                });
             }
-            else {
+            else
                 this.questions = '';
-                this.exposititon = '';
+            if (this.reading.day.exposition) {
+                this.parseLinks(this.parseMarkdown(this.reading.day.exposition))
+                    .then(content => {
+                    this.exposititon = content;
+                });
             }
+            else
+                this.exposititon = '';
+        }
+        else {
+            this.questions = '';
+            this.exposititon = '';
         }
     }
     updated(_changedProperties) {
@@ -235,6 +238,9 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     `;
     }
 };
+__decorate([
+    property({ type: String })
+], BibleReading.prototype, "datasource", void 0);
 __decorate([
     property({ type: Object })
 ], BibleReading.prototype, "reading", void 0);

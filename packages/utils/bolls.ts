@@ -61,34 +61,37 @@ export interface BibleReference {
 }
 
 export interface BibleExcerptData extends BibleReference {
-  translation: string
+  translation: BollsBible.Translation["short_name"]
   bookNum: number
   versesData: BollsBible.ChapterVerse[]
+  url: string
 }
 
 export class BollsController {
-  static BOLLS_HOSTNAME = 'https://bolls.life';
-  static BOLLS_TRANSLATIONSINDEX = this.BOLLS_HOSTNAME+'/static/bolls/app/views/languages.json';
-  static BOLLS_TRANSLATIONSBOOKS = this.BOLLS_HOSTNAME+'/static/bolls/app/views/translations_books.json';
+  static API_ROOT = 'https://bolls.life';
+  static TRANSLATIONSINDEX_URL = this.API_ROOT + '/static/bolls/app/views/languages.json';
+  static TRANSLATIONSBOOKS_URL = this.API_ROOT + '/static/bolls/app/views/translations_books.json';
   static DEFAULT_TRANSLATION = 'UBIO';
 
-  readonly selectedLanguages?: string[];
-  readonly selectedTranslations?: string[];
+  selectedLanguages: string[];
+  selectedTranslations: string[];
+  defaultTranslation: string;
   library: Promise<BibleEdition[]>;
-  
-  constructor({languages = [], translations = []}: {languages?: string[], translations?: string[]}) {
-    if (languages.length) this.selectedLanguages = languages;
-    if (translations.length) this.selectedTranslations = translations;
-    this.library = BollsController.fetchBollsTranslationsBooks({languages, translations})
+
+  constructor(defaultTranslation: string, languages: string[] = [], translations: string[] = []) {
+    this.defaultTranslation = defaultTranslation;
+    this.selectedLanguages = languages;
+    this.selectedTranslations = translations;
+    this.library = this.getBibleEditions({ languages, translations })
   }
 
   static getBollsHomepage(translation = this.DEFAULT_TRANSLATION) {
-    return `${this.BOLLS_HOSTNAME}/${translation}/`
+    return `${this.API_ROOT}/${translation}/`
   }
 
-  static async fetchBollsTranslationsIndex(): Promise<BollsBible.L10n[]> {
+  static async fetchTranslationsIndex(): Promise<BollsBible.L10n[]> {
     try {
-      const resp = await fetch(this.BOLLS_TRANSLATIONSINDEX);
+      const resp = await fetch(this.TRANSLATIONSINDEX_URL);
       if (!resp.ok) {
         throw new Error(`Fetch failed with status: ${resp.status}`)
       }
@@ -99,71 +102,69 @@ export class BollsController {
       return []
     }
   }
-  
-  static async fetchBollsTranslationsBooks({languages = [], translations = []} : {languages: string[], translations: BollsBible.Translation['short_name'][]}): Promise<BibleEdition[]> {
+  static async fetchTranslationsBooks(): Promise<BollsBible.BooksIndex> {
     try {
-      let translationsIndex = await this.fetchBollsTranslationsIndex(),
-      selectedTranslations: BollsBible.L10n[] = translationsIndex;
-      if (!(languages.length && translations.length) ) {
-        return await fetch(this.BOLLS_TRANSLATIONSBOOKS)
-        .then(res => {
-          if (!res.ok) throw new Error(`Fetch failed with status: ${res.status}`);
-          return res.json()
-        }).then((booksIndex: BollsBible.BooksIndex) => selectedTranslations.map(ln => {
-          return ln.translations.map(tr => {
-            return {
-              ...tr,
-              language: ln.language,
-              books: booksIndex[tr.short_name]
-            }
-          })
-        }).flat())
-      } else {
-        if (languages.length) {
-          selectedTranslations = selectedTranslations
-            .filter(ln => languages.some(lang => ln.language.includes(lang)))
-        }
-        if (translations.length) {
-          selectedTranslations = selectedTranslations
+      const resp = await fetch(this.TRANSLATIONSBOOKS_URL);
+      if (!resp.ok) throw new Error(`Fetch failed with status: ${resp.status}`);
+      const result: BollsBible.BooksIndex = await resp.json()
+      return result;
+    } catch (error) {
+      console.error(error)
+      return {}
+    }
+  }
+
+  async getBibleEditions({ languages = [], translations = [] }: { languages: string[], translations: BollsBible.Translation['short_name'][] }): Promise<BibleEdition[]> {
+    try {
+      const booksIndex: BollsBible.BooksIndex = await BollsController.fetchTranslationsBooks();
+
+      var translationsIndex = await BollsController.fetchTranslationsIndex();
+
+      if (languages.length) {
+        translationsIndex = translationsIndex
+          .filter(ln => languages.some(lang => ln.language.includes(lang)))
+      } else this.selectedLanguages = languages = translationsIndex.map(ln => ln.language);
+
+      if (translations.length) {
+        translationsIndex = translationsIndex
           .filter(ln => {
             ln.translations = ln.translations.filter(tr => translations.includes(tr.short_name))
             return ln.translations.length > 0
           })
-        }
-        return Promise.all(
-          selectedTranslations
-          .map(ln => ln.translations.map(async tr => {
-            return {
-              ...tr,
-              language: ln.language,
-              books: await this.fetchBollsTranslationBooks(tr.short_name)
-            }
-          })).flat()
-        )
-      }
+      } else this.selectedTranslations = translations = Object.keys(booksIndex);
+
+      return translationsIndex
+        .map(ln => ln.translations.map(tr => {
+          return {
+            ...tr,
+            language: ln.language,
+            books: booksIndex[tr.short_name]
+          }
+        })).flat();
+
     } catch (error) {
       console.error(error)
       return []
     }
   }
-  
-  static async fetchBollsTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]> {
+
+  static async fetchTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]> {
     try {
-      const resp = await fetch(`https://bolls.life/get-books/${translationShortName}/`);
+      const resp = await fetch(`${this.API_ROOT}/get-books/${translationShortName}/`);
       if (!resp.ok) {
         throw new Error(`Fetch failed with status: ${resp.status}`)
       }
       const result: BollsBible.Book[] = await resp.json();
       return result;
-    } catch(error) {
+    } catch (error) {
       console.error(error)
       return []
     }
   }
 
-  static async fetchBollsChapter({ translation, bookNum, chapter }: { translation: BollsBible.Translation['short_name']; bookNum: number; chapter: number; }): Promise<BollsBible.ChapterVerse[]> {
+  static async fetchChapter(translation: string, book: number, chapter: number) {
     try {
-      const resp = await fetch(`https://bolls.life/get-chapter/${translation}/${bookNum}/${chapter}/`);
+      const resp = await fetch(`${this.API_ROOT}/get-chapter/${translation}/${book}/${chapter}/`);
       if (!resp.ok) {
         throw new Error(`Fetch failed with status: ${resp.status}`)
       }
@@ -175,8 +176,18 @@ export class BollsController {
     }
   }
 
-  static getBollsChapterUrl({ translation, bookNum, chapter, verse }: { translation: BollsBible.Translation['short_name']; bookNum: number; chapter: number; verse?: number }): string {
-    return `https://bolls.life/${translation}/${bookNum}/${chapter}/${verse ? verse + "/" : ""}`;
+  async fetchChapter(ref: BibleReference): Promise<BollsBible.ChapterVerse[]> {
+    let bookNum = (await this.getBook(ref.bookName)).bookid;
+    return BollsController.fetchChapter(ref.translation || this.defaultTranslation || BollsController.DEFAULT_TRANSLATION, bookNum, ref.chapter);
+  }
+
+  static getChapterUrl(translation: string, book: number, chapter: number, verse?: number): string {
+    return `${this.API_ROOT}/${translation}/${book}/${chapter}/${verse ? verse + "/" : ""}`;
+  }
+
+  async getChapterUrl(ref: BibleReference): Promise<string> {
+    let bookNum = (await this.getBook(ref.bookName)).bookid;
+    return BollsController.getChapterUrl(ref.translation || this.defaultTranslation || BollsController.DEFAULT_TRANSLATION, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined);
   }
 
   async bookSearch(query: string): Promise<BookSearchResult[]> {
@@ -233,22 +244,23 @@ export class BollsController {
     if (searchInEdition.length) return searchInEdition[0];
     else throw new Error(`Cannot find the book's number. Check the book's name spelling if it exists in selected Bible's edition(s).`);
   }
-  
+
   async getExcerpt(ref: BibleReference): Promise<BibleExcerptData> {
     let book = await this.getBook(ref.bookName);
-    var versesData = await BollsController.fetchBollsChapter({
-      translation: ref.translation || book.translation,
-      bookNum: book.bookid,
-      chapter: ref.chapter
-    });
+    let translation = ref.translation || book.translation;
+    let bookNum = book.bookid;
+    let chapter = ref.chapter;
+    var versesData = await BollsController.fetchChapter(translation, bookNum, chapter);
     if (ref.verses && ref.verses.length) {
       versesData = versesData.filter(verse => ref.verses!.includes(verse.verse));
     }
     return {
       ...ref,
-      translation: ref.translation || book.translation,
-      bookNum: book.bookid,
-      versesData
+      translation,
+      reference: ref.reference + (ref.translation ? '' : ` (${translation})`),
+      bookNum,
+      versesData,
+      url: BollsController.getChapterUrl(translation, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined)
     }
   }
 }

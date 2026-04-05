@@ -13,7 +13,7 @@ export interface BibleDataSource {
 
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
-  @property({ type: Object}) bible: BibleDataSource = new BibleController(this);
+  @property({ type: Object }) bible: BibleDataSource = new BibleController(this);
   @property({ type: String, attribute: 'hilight-verses' }) hilightVerses: string = '';
   @property({ type: String }) reference: string = '';
 
@@ -40,14 +40,8 @@ export class BibleExcerpt extends LitElement {
 
   private bExcerpt(excerpt: BibleExcerptData, hilight: string = '') {
     let hilighted = hilight ? spreadNumbers(hilight) : [];
-    return html`<div class="excerpt"><h3>${
-      unsafeHTML(BibleController.refAnchor({
-        ...excerpt,
-        verse: excerpt.verses?.[0]
-      }))
-    }</h3>${
-      excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
-    }</div>`
+    return html`<div class="excerpt"><h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
+      }</div>`
   }
 
   protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void {

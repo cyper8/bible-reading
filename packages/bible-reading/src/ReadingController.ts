@@ -1,5 +1,4 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
-import { getJSONP } from "../../utils/getJSONP.js";
 import { DayData } from "../../day-selector/index.js";
 
 
@@ -11,11 +10,8 @@ export declare interface ReadingDay extends DayData {
 }
 export type RawReadingDay = { [key in keyof ReadingDay]: string }
 export type ReadingDataProvider = (date: Date) => Promise<RawReadingDay[]> | RawReadingDay[];
-export type ReadingMonth = ReadingDay[];
 
 
-const DEFAULT_READING_SOURCE = location.origin+"/json";
-const defaultReadingDataProvider: ReadingDataProvider = (date: Date) => getJSONP<RawReadingDay[]>(DEFAULT_READING_SOURCE, `date=${date.toDateString()}`);
 export const stripHours = (date: Date) => (date.setHours(0, 0, 0, 0), date);
 const objToReadingDay: (object: RawReadingDay) => ReadingDay = (object: RawReadingDay) => {
   return {
@@ -38,33 +34,35 @@ export function isRawReadingDay(obj: Object): obj is RawReadingDay {
 }
 
 
-
 export class ReadingController implements ReactiveController {
 
   host: ReactiveControllerHost;
 
   private _date: Date = stripHours(new Date());
-  get date() {return this._date};
+  get date() { return this._date };
   set date(date: Date) {
     const d = stripHours(date);
     this._date = d;
     Promise.resolve(
-      this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth()) ?
-      this.dataSourse(date) :
-      this.month
+      this.month.length == 0 || (this.month[1].date.getMonth() !== d.getMonth())
+        ? Promise.resolve(this.dataSourse(date))
+          .then(rawdays => rawdays.map(
+            rawday => objToReadingDay(rawday)
+          ))
+        : this.month
     )
-    .then(rawdays => {
-      this.month = rawdays.map(rawday => objToReadingDay(rawday));
-      this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
-      this.host.requestUpdate();
-    })
+      .then(days => {
+        this.month = days;
+        this.day = this.month.find(reading => reading.date.getTime() == d.getTime());
+        this.host.requestUpdate();
+      })
   }
-  month: ReadingMonth = [];
+  month: ReadingDay[] = [];
   day?: ReadingDay;
-  
+
   private dataSourse: ReadingDataProvider;
 
-  constructor(host: ReactiveControllerHost, dataProvider: ReadingDataProvider = defaultReadingDataProvider) {
+  constructor(host: ReactiveControllerHost, dataProvider: ReadingDataProvider) {
     this.host = host;
     this.dataSourse = dataProvider
   }

@@ -10,7 +10,6 @@ export type RawReadingDay = {
     [key in keyof ReadingDay]: string;
 };
 export type ReadingDataProvider = (date: Date) => Promise<RawReadingDay[]> | RawReadingDay[];
-export type ReadingMonth = ReadingDay[];
 export declare const stripHours: (date: Date) => Date;
 export declare function isRawReadingDay(obj: Object): obj is RawReadingDay;
 export declare class ReadingController implements ReactiveController {
@@ -18,10 +17,10 @@ export declare class ReadingController implements ReactiveController {
     private _date;
     get date(): Date;
     set date(date: Date);
-    month: ReadingMonth;
+    month: ReadingDay[];
     day?: ReadingDay;
     private dataSourse;
-    constructor(host: ReactiveControllerHost, dataProvider?: ReadingDataProvider);
+    constructor(host: ReactiveControllerHost, dataProvider: ReadingDataProvider);
     hostConnected(): void;
     hostDisconnected(): void;
     hostUpdate(): void;
