@@ -1,12 +1,9 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
 import { BibleExcerptData, BibleReference, BollsController } from "../../utils/bolls.js";
 import { spreadNumbers } from "../../utils/spreadNumbers.js";
-import { type BibleDataSource } from './bible-excerpt.js';
 
-const DEFAULT_TRANSLATION = 'UBIO';
-
-export class BibleController implements ReactiveController, BibleDataSource {
-  static remote = new BollsController(DEFAULT_TRANSLATION, ['Ukrainian']);
+export class BibleController implements ReactiveController {
+  static remote = new BollsController();
 
   static parseReferenses(refs: string): BibleReference[] {
     return refs.split(',')
@@ -65,6 +62,8 @@ export class BibleController implements ReactiveController, BibleDataSource {
 
   host: ReactiveControllerHost;
 
+  defaultTranslation: string;
+
   private _reference: string = '';
   get reference() { return this._reference };
   set reference(ref: string) {
@@ -75,8 +74,9 @@ export class BibleController implements ReactiveController, BibleDataSource {
 
   excerpts: BibleExcerptData[] = [];
 
-  constructor(host: ReactiveControllerHost) {
+  constructor(host: ReactiveControllerHost, defaultTranslation: BollsBible.Translation['short_name']) {
     this.host = host;
+    this.defaultTranslation = defaultTranslation;
   }
 
   hostConnected(): void { }
