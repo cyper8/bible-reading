@@ -1,4 +1,5 @@
-import { LitElement, PropertyValues, css, html, state, nothing } from "lit";
+import { LitElement, PropertyValues, css, html, nothing } from "lit";
+import { state } from 'lit/decorators.js';
 import { customElement, property } from "lit/decorators.js";
 import { marked } from "marked";
 import "../../bible-excerpt/index.js";
@@ -7,7 +8,7 @@ import { type BollsBible } from '../../utils/bolls.js';
 import { BibleController } from "../../bible-excerpt/src/BibleController.js";
 import { pickOneOf } from "../../utils/pickOneOf.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { DateSelectedEvent } from "../../day-selector/src/day-selector.js";
+import { DateSelectedEvent, DayData } from "../../day-selector/src/day-selector.js";
 import { getJSONP } from "../../utils/getJSONP.js";
 
 export interface ReadingDataSource {
@@ -59,34 +60,36 @@ export function isRawReadingDay(obj: Object): obj is RawReadingDay {
 @customElement('bible-reading')
 export class BibleReading extends LitElement {
 
-  @property({ type: String }) readingUrl: string;
+  @property({ type: String }) readingUrl: string = '';
   @property({ type: Date }) date: Date = stripHours(new Date());
   @property({ type: String }) defaultTranslation: BollsBible.Translation['short_name'] = 'UBIO';
-  bible = new BibleController()
+  bible = new BibleController(this, this.defaultTranslation, ['Ukrainian']);
   private mode: 'static' | 'dynamic' = 'dynamic';
   @state() month: ReadingDay[] = [];
   @state() day?: ReadingDay;
+  @state() questions: string = '';
+  @state() exposition: string = '';
 
-  private getReadingData = (date: Date) => {
+  private getReadingData = async (date: Date) => {
     const month = date.getMonth();
     const year = date.getFullYear();
     var reading: Promise<ReadingDay[]>;
-    if (this.month.length 
-      && this.month[0].date.getMonth() == month 
-      && this.month[0].date.getFullYear() == year) 
-    {
+    if (this.month.length
+      && this.month[0].date.getMonth() == month
+      && this.month[0].date.getFullYear() == year) {
       reading = Promise.resolve(this.month);
     } else {
       if (this.mode == 'static') {
-        window.location.href = this.readingUrl + `?date=${request}`;
+        window.location.href = this.readingUrl + `?date=${date.toDateString()}`;
+        return;
       } else {
-        reading = getJSONP<RawReadingDay[]>(this.readingUrl, `date=${this.date.toDateString()}`)
-        .then(rdays => 
-          rdays.map(objToReadingDay)
-        );
+        reading = getJSONP<RawReadingDay[]>(this.readingUrl, `date=${date.toDateString()}`)
+          .then(rdays =>
+            rdays.map(objToReadingDay)
+          );
       }
     }
-    return reading.then(rdays => {
+    await reading.then(rdays => {
       this.month = rdays;
       this.day = this.month.find(reading => reading.date.getTime() == date.getTime());
     })
@@ -100,7 +103,7 @@ export class BibleReading extends LitElement {
         .map(rday => objToReadingDay(rday));
     } else return [] as ReadingDay[]
   }
-  
+
   private activateReferences() {
     if (this.shadowRoot) {
       var node: Text, textIterator = document.createNodeIterator(
@@ -178,13 +181,13 @@ export class BibleReading extends LitElement {
 
   async parseLinks(text: string) {
     const inlineRef = /\[[^\[\]]+\]/gm;
-    var refGroups = await Promise.all((text.match(inlineRef) || [])
+    var refGroups = (await Promise.all((text.match(inlineRef) || [])
       .map(match => match.substring(1, match.length - 1)) // remove square braces
-      .map(refString => BibleController.parseReferenses(refString))
-      .map(async refs => {
-        let links: string[] = await Promise.all(refs.map(ref => BibleController.refAnchor(ref)))
+      .map(async refString => await this.bible.parseExcerpts(refString))))
+      .map(excerpts => {
+        let links: string[] = excerpts.map(ex => `<a href="${ex.url}">${ex.reference}</a>`)
         return links.join(", ");
-      }));
+      });
     return text.split(inlineRef).map((part, index) => refGroups[index] ? part + refGroups[index] : part).join("");
   }
 
@@ -194,28 +197,28 @@ export class BibleReading extends LitElement {
 
   protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void {
     if (_changedProperties.has("date")) {
-      this.getReadingData(this.date).then(this.requestUpdate);
+      this.getReadingData(this.date).then(() => { this.requestUpdate() });
     }
-    if (_changedProperties.has("day")) {
-
+    if (_changedProperties.has("day") && this.day) {
+      this.bible.reference = this.day.reading;
     }
-    // if (this.reading.day) {
-    //   if (this.reading.day.questions) {
-    //     this.parseLinks(this.parseMarkdown(this.reading.day.questions))
-    //       .then(content => {
-    //         this.questions = content;
-    //       });
-    //   } else this.questions = '';
-    //   if (this.reading.day.exposition) {
-    //     this.parseLinks(this.parseMarkdown(this.reading.day.exposition))
-    //       .then(content => {
-    //         this.exposititon = content;
-    //       });
-    //   } else this.exposititon = '';
-    // } else {
-    //   this.questions = '';
-    //   this.exposititon = '';
-    // }
+    if (this.day) {
+      if (this.day.questions) {
+        this.parseLinks(this.parseMarkdown(this.day.questions))
+          .then(content => {
+            this.questions = content;
+          });
+      } else this.questions = '';
+      if (this.day.exposition) {
+        this.parseLinks(this.parseMarkdown(this.day.exposition))
+          .then(content => {
+            this.exposition = content;
+          });
+      } else this.exposition = '';
+    } else {
+      this.questions = '';
+      this.exposition = '';
+    }
   }
 
   connectedCallback() {
@@ -230,13 +233,13 @@ export class BibleReading extends LitElement {
     } else { // getting data dynamically
       this.mode = 'dynamic';
       getJSONP<RawReadingDay[]>(this.readingUrl, `date=${this.date.toDateString()}`)
-      .then(rdays => {this.month = rdays.map(objToReadingDay)})
+        .then(rdays => { this.month = rdays.map(objToReadingDay) })
     }
-    
+
   }
 
   protected updated(_changedProperties: PropertyValues<BibleReading>): void {
-    if (_changedProperties.has("questions") || _changedProperties.has("exposititon")) {
+    if (_changedProperties.has("questions") || _changedProperties.has("exposition")) {
       this.activateReferences();
     }
   }
@@ -250,7 +253,7 @@ export class BibleReading extends LitElement {
     <p>Сьогодні читаємо:</p>
     <bible-excerpt reference="${this.day.reading}"></bible-excerpt>
     ${unsafeHTML(this.questions)}
-    ${unsafeHTML(this.exposititon)}`
+    ${unsafeHTML(this.exposition)}`
         : nothing}`
   }
 
