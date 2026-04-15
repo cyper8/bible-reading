@@ -1,15 +1,9 @@
-export class BollsController {
+export class BollsBibleService {
     static { this.API_ROOT = 'https://bolls.life'; }
     static { this.TRANSLATIONSINDEX_URL = this.API_ROOT + '/static/bolls/app/views/languages.json'; }
     static { this.TRANSLATIONSBOOKS_URL = this.API_ROOT + '/static/bolls/app/views/translations_books.json'; }
-    static { this.DEFAULT_TRANSLATION = 'UBIO'; }
-    constructor(defaultTranslation, languages = [], translations = []) {
-        this.defaultTranslation = defaultTranslation;
-        this.selectedLanguages = languages;
-        this.selectedTranslations = translations;
-        this.library = this.getBibleEditions({ languages, translations });
-    }
-    static getBollsHomepage(translation = this.DEFAULT_TRANSLATION) {
+    static { this.allEditions = this.getLibrary(); }
+    static getBollsHomepage(translation) {
         return `${this.API_ROOT}/${translation}/`;
     }
     static async fetchTranslationsIndex() {
@@ -39,38 +33,17 @@ export class BollsController {
             return {};
         }
     }
-    async getBibleEditions({ languages = [], translations = [] }) {
-        try {
-            const booksIndex = await BollsController.fetchTranslationsBooks();
-            var translationsIndex = await BollsController.fetchTranslationsIndex();
-            if (languages.length) {
-                translationsIndex = translationsIndex
-                    .filter(ln => languages.some(lang => ln.language.includes(lang)));
-            }
-            else
-                this.selectedLanguages = languages = translationsIndex.map(ln => ln.language);
-            if (translations.length) {
-                translationsIndex = translationsIndex
-                    .filter(ln => {
-                    ln.translations = ln.translations.filter(tr => translations.includes(tr.short_name));
-                    return ln.translations.length > 0;
-                });
-            }
-            else
-                this.selectedTranslations = translations = Object.keys(booksIndex);
-            return translationsIndex
-                .map(ln => ln.translations.map(tr => {
-                return {
-                    ...tr,
-                    language: ln.language,
-                    books: booksIndex[tr.short_name]
-                };
-            })).flat();
-        }
-        catch (error) {
-            console.error(error);
-            return [];
-        }
+    static async getLibrary() {
+        const booksIndex = await BollsBibleService.fetchTranslationsBooks();
+        var translationsIndex = await BollsBibleService.fetchTranslationsIndex();
+        return translationsIndex
+            .map(ln => ln.translations.map(tr => {
+            return {
+                ...tr,
+                language: ln.language,
+                books: booksIndex[tr.short_name]
+            };
+        })).flat();
     }
     static async fetchTranslationBooks(translationShortName) {
         try {
@@ -100,16 +73,32 @@ export class BollsController {
             return [];
         }
     }
-    async fetchChapter(ref) {
-        let bookNum = (await this.getBook(ref.bookName)).bookid;
-        return BollsController.fetchChapter(ref.translation || this.defaultTranslation || BollsController.DEFAULT_TRANSLATION, bookNum, ref.chapter);
-    }
     static getChapterUrl(translation, book, chapter, verse) {
         return `${this.API_ROOT}/${translation}/${book}/${chapter}/${verse ? verse + "/" : ""}`;
     }
-    async getChapterUrl(ref) {
-        let bookNum = (await this.getBook(ref.bookName)).bookid;
-        return BollsController.getChapterUrl(ref.translation || this.defaultTranslation || BollsController.DEFAULT_TRANSLATION, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined);
+    get selectedLanguages() { return this._selectedLanguages; }
+    get selectedTranslations() { return this._selectedTranslations; }
+    constructor() {
+        this._selectedLanguages = [];
+        this._selectedTranslations = [];
+        this.library = BollsBibleService.allEditions.then(editions => {
+            this._selectedLanguages = editions.map(edition => edition.language);
+            this._selectedTranslations = editions.map(edition => edition.short_name);
+            return editions;
+        });
+    }
+    selectLanguages(languages) {
+        return this.library = BollsBibleService.allEditions.then(editions => {
+            this._selectedLanguages = languages;
+            return editions.filter(ln => languages.some(lang => ln.language.includes(lang)));
+        });
+    }
+    selectTranslations(translations) {
+        return this.library = BollsBibleService.allEditions.then(editions => {
+            this._selectedTranslations = translations;
+            return editions
+                .filter(edition => translations.includes(edition.short_name));
+        });
     }
     async bookSearch(query) {
         let selectedBooks = (await this.library)
@@ -120,12 +109,12 @@ export class BollsController {
                 searchWeight: 0
             };
         })).flat();
-        let subqueries = query.split(" ");
+        let qwords = query.split(" ");
         return selectedBooks.reduce((matches, book) => {
             let matchWeight = 0;
-            let match = subqueries.filter((subQ) => {
-                if (/[0-9]/.test(subQ)) {
-                    if (RegExp(subQ.replace(/[^0-9]/g, "")).test(book.name)) {
+            let match = qwords.filter((qword) => {
+                if (/[0-9]/.test(qword)) {
+                    if (RegExp(qword.replace(/[^0-9]/g, "")).test(book.name)) {
                         matchWeight += 3;
                         return true;
                     }
@@ -134,16 +123,35 @@ export class BollsController {
                 }
                 else {
                     let matchLength = 0;
-                    var len = 1;
-                    for (; len <= subQ.length; len++) {
-                        let exp = new RegExp(`(?<=\\s|^)${subQ.slice(0, len).replace(/(і|й|и)/gi, "(і|и|й)")}${len == subQ.length ? '(?=\\s|$)' : ''}`, "ig");
+                    var len = 0;
+                    var skip = 0;
+                    var test = "";
+                    for (; len < qword.length; len++) {
+                        if (skip) {
+                            test = test.slice(0, len - 1) + ".";
+                        }
+                        test = test + qword[len];
+                        let exp = new RegExp(`(?<=\\s|^)${test.replace(/(і|й|и)/gi, "(і|и|й)")}${len == qword.length - 1 ? '(?=\\s|$)' : ''}`, "ig");
                         if (exp.test(book.name)) {
-                            matchLength = len;
-                            if (len == subQ.length)
+                            if (skip) {
+                                skip = skip - 1;
+                            }
+                            else {
+                                matchLength = len;
+                            }
+                            if (len == qword.length - 1)
                                 matchLength += 2;
                         }
-                        else
-                            break;
+                        else {
+                            if (skip > 1) {
+                                skip = 0;
+                                break;
+                            }
+                            else {
+                                skip = skip + 1;
+                            }
+                        }
+                        ;
                     }
                     if (matchLength) {
                         matchWeight += matchLength;
@@ -164,30 +172,25 @@ export class BollsController {
         }, [])
             .sort((b1, b2) => b2.searchWeight - b1.searchWeight);
     }
-    async getBook(bookName) {
+    async getBook(bookName, translation) {
         let searchInEdition = (await this.bookSearch(bookName.toString()))
-            .filter(sr => sr.searchWeight >= bookName.length * 0.7);
-        if (searchInEdition.length)
-            return searchInEdition[0];
-        else
-            throw new Error(`Cannot find the book's number. Check the book's name spelling if it exists in selected Bible's edition(s).`);
-    }
-    async getExcerpt(ref) {
-        let book = await this.getBook(ref.bookName);
-        let translation = ref.translation || book.translation;
-        let bookNum = book.bookid;
-        let chapter = ref.chapter;
-        var versesData = await BollsController.fetchChapter(translation, bookNum, chapter);
-        if (ref.verses && ref.verses.length) {
-            versesData = versesData.filter(verse => ref.verses.includes(verse.verse));
+            .filter(sr => sr.searchWeight >= bookName.length * 0.7), result = searchInEdition;
+        if (searchInEdition.length) {
+            if (translation) {
+                result = searchInEdition.filter(book => book.translation == translation);
+                if (result.length)
+                    return searchInEdition[0];
+                else {
+                    let bookid = searchInEdition[0].bookid;
+                    let books = (await BollsBibleService.allEditions).find(ed => ed.short_name === translation)?.books;
+                    if (books?.length) {
+                        result = books.filter(b => b.bookid == bookid);
+                        if (result.length)
+                            return result[0];
+                    }
+                }
+            }
         }
-        return {
-            ...ref,
-            translation,
-            reference: ref.reference + (ref.translation ? '' : ` (${translation})`),
-            bookNum,
-            versesData,
-            url: BollsController.getChapterUrl(translation, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined)
-        };
+        throw new Error(`Cannot find the book. Check the book's name spelling if it exists in selected Bible's edition(s).`);
     }
 }

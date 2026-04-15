@@ -1,5 +1,3 @@
-import { spreadNumbers } from "./spreadNumbers";
-
 export namespace BollsBible {
 
   export declare interface Verse {
@@ -151,52 +149,6 @@ export class BollsBibleService {
     return `${this.API_ROOT}/${translation}/${book}/${chapter}/${verse ? verse + "/" : ""}`;
   }
 
-  static parseReferenses(refs: string): BibleReference[] {
-    return refs.split(',')
-      .reduce((result: BibleReference[], ref, i, _originalRefs) => {
-        let translation: string | undefined, foundtranslations: string[] | null = ref.trim().match(/\([A-Z0-9]+\)/);
-        if (foundtranslations && foundtranslations.length) {
-          ref = ref.replace(foundtranslations[0], '').trim();
-          translation = foundtranslations[0].replace(/[\(\)]/g, '');
-        } else {
-          translation = i > 0 ? result[i - 1].translation : undefined;
-          ref = ref.trim();
-        }
-        let stances: string[] = ref.split(':'),
-          chapters: number[], bookName: string;
-        let chapterspreads = stances[0].match(/[0-9 -]+$/);
-        if (chapterspreads && chapterspreads.length) {
-          chapters = spreadNumbers(chapterspreads[0]);
-          bookName = stances[0].replace(chapterspreads[0], '').trim();
-        }
-        else {
-          chapters = i > 0 ? [result[i - 1].chapter] : [1];
-          bookName = stances[0].trim();
-        };
-        if (bookName === '') {
-          bookName = i > 0 ? result[i - 1].bookName : '';
-        }
-        if (bookName)
-          chapters.forEach((chapter, i) => {
-            let verses: number[] = [];
-            if (i === chapters.length - 1) {
-              if (stances.length == 2) {
-                verses = spreadNumbers(stances[1].trim());
-              }
-            }
-            let excerpt: BibleReference = {
-              translation: translation,
-              reference: `${bookName} ${chapter}${verses.length ? `:${stances[1]}` : ''}${translation ? ` (${translation})` : ''}`,
-              bookName,
-              chapter,
-              verses
-            };
-            result.push(excerpt)
-          })
-        return result
-      }, [])
-  }
-
   private _selectedLanguages: string[] = [];
   get selectedLanguages() { return this._selectedLanguages }
   private _selectedTranslations: string[] = [];
@@ -226,16 +178,6 @@ export class BollsBibleService {
     })
   }
 
-  // async fetchChapter(ref: BibleReference): Promise<BollsBible.ChapterVerse[]> {
-  //   let bookNum = (await this.getBook(ref.bookName)).bookid;
-  //   return BollsBibleService.fetchChapter(ref.translation || this.defaultTranslation, bookNum, ref.chapter);
-  // }
-
-  // async getChapterUrl(ref: BibleReference): Promise<string> {
-  //   let bookNum = (await this.getBook(ref.bookName)).bookid;
-  //   return BollsBibleService.getChapterUrl(ref.translation || this.defaultTranslation, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined);
-  // }
-
   async bookSearch(query: string): Promise<BookSearchResult[]> {
     //const MIN_MATCH_LENGTH = 1;
     let selectedBooks: BookSearchResult[] = (await this.library)
@@ -246,25 +188,42 @@ export class BollsBibleService {
           searchWeight: 0
         } as BookSearchResult
       })).flat();
-    let subqueries: string[] = query.split(" ");
+    let qwords: string[] = query.split(" ");
     return selectedBooks.reduce<BookSearchResult[]>((matches: BookSearchResult[], book: BookSearchResult) => {
       let matchWeight = 0;
-      let match = subqueries.filter((subQ) => {
-        if (/[0-9]/.test(subQ)) {    // numbers matched completely as they come
-          if (RegExp(subQ.replace(/[^0-9]/g, "")).test(book.name)) {
+      let match = qwords.filter((qword) => {
+        if (/[0-9]/.test(qword)) {    // numbers from qwords matched separately
+          if (RegExp(qword.replace(/[^0-9]/g, "")).test(book.name)) {
             matchWeight += 3;
             return true;
           } else return false
         } else {
           //if (subQ.length < MIN_MATCH_LENGTH) return true;
           let matchLength = 0;
-          var len = 1;//Math.max(Math.floor(subQ.length*0.7), MIN_MATCH_LENGTH);
-          for (; len <= subQ.length; len++) {
-            let exp = new RegExp(`(?<=\\s|^)${subQ.slice(0, len).replace(/(і|й|и)/gi, "(і|и|й)")}${len == subQ.length ? '(?=\\s|$)' : ''}`, "ig");
+          var len = 0;//Math.max(Math.floor(subQ.length*0.7), MIN_MATCH_LENGTH);
+          var skip = 0;
+          var test = "";
+          for (; len < qword.length; len++) {
+            if (skip) {
+              test = test.slice(0, len - 1) + ".";
+            }
+            test = test + qword[len];
+            let exp = new RegExp(`(?<=\\s|^)${test.replace(/(і|й|и)/gi, "(і|и|й)")}${len == qword.length - 1 ? '(?=\\s|$)' : ''}`, "ig");
             if (exp.test(book.name)) {
-              matchLength = len;
-              if (len == subQ.length) matchLength += 2;
-            } else break;
+              if (skip) {
+                skip = skip - 1;
+              } else {
+                matchLength = len;
+              }
+              if (len == qword.length - 1) matchLength += 2;
+            } else {
+              if (skip > 1) {
+                skip = 0;
+                break;
+              } else {
+                skip = skip + 1;
+              }
+            };
           }
           if (matchLength) {
             matchWeight += matchLength;
@@ -284,13 +243,23 @@ export class BollsBibleService {
       .sort((b1, b2) => b2.searchWeight - b1.searchWeight)
   }
 
-  async getBook(bookName: string, translation?: BollsBible.Translation['short_name']): Promise<BookSearchResult> {
+  async getBook(bookName: string, translation?: BollsBible.Translation['short_name']): Promise<BollsBible.Book> {
     let searchInEdition = (await this.bookSearch(bookName.toString()))
-      .filter(sr => sr.searchWeight >= bookName.length * 0.7);
-    if (translation) {
-      searchInEdition = searchInEdition.filter(book => book.translation == translation);
+      .filter(sr => sr.searchWeight >= bookName.length * 0.7), result: BollsBible.Book[] = searchInEdition;
+    if (searchInEdition.length) {
+      if (translation) {
+        result = searchInEdition.filter(book => book.translation == translation);
+        if (result.length) return searchInEdition[0];
+        else {
+          let bookid = searchInEdition[0].bookid;
+          let books = (await BollsBibleService.allEditions).find(ed => ed.short_name === translation)?.books;
+          if (books?.length) {
+            result = books.filter(b => b.bookid == bookid);
+            if (result.length) return result[0];
+          }
+        }
+      }
     }
-    if (searchInEdition.length) return searchInEdition[0];
-    else throw new Error(`Cannot find the book. Check the book's name spelling if it exists in selected Bible's edition(s).`);
+    throw new Error(`Cannot find the book. Check the book's name spelling if it exists in selected Bible's edition(s).`);
   }
 }

@@ -11,12 +11,6 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { DateSelectedEvent, DayData } from "../../day-selector/src/day-selector.js";
 import { getJSONP } from "../../utils/getJSONP.js";
 
-export interface ReadingDataSource {
-  date: Date;
-  month: ReadingDay[];
-  day?: ReadingDay
-}
-
 export declare interface ReadingDay extends DayData {
   date: Date;
   reading: string;
@@ -69,6 +63,7 @@ export class BibleReading extends LitElement {
   @state() day?: ReadingDay;
   @state() questions: string = '';
   @state() exposition: string = '';
+  @state() hilightVerses: string = '';
 
   private getReadingData = async (date: Date) => {
     const month = date.getMonth();
@@ -104,41 +99,13 @@ export class BibleReading extends LitElement {
     } else return [] as ReadingDay[]
   }
 
-  private activateReferences() {
-    if (this.shadowRoot) {
-      var node: Text, textIterator = document.createNodeIterator(
-        this.shadowRoot,
-        NodeFilter.SHOW_TEXT,
-        (node: Node) => {
-          let search = node.textContent?.match(/([0-9,іта -]*вірш[^)\s]*[0-9,іта -]*)/gmi);
-          if (search?.length) {
-            return NodeFilter.FILTER_ACCEPT
-          } else {
-            return NodeFilter.FILTER_REJECT
-          }
-        }
-      );
-      while (node = textIterator.nextNode() as Text) {
-        if (node.parentElement?.className.includes('ref-verses')) continue;
-        var refs = node.textContent?.matchAll(/([0-9,іта -]*вірш[^)\s]*[0-9,іта -]*)/gmi);
-        if (refs) {
-          for (const match of refs) {
-            let ref = node.splitText(match.index);
-            let rest = ref.splitText(match[0].length);
-            let a = document.createElement('a');
-            a.appendChild(ref);
-            node.parentElement?.insertBefore(a, rest);
-            a.className = "ref-verses";
-            let vs = match[0].match(/[0-9-]+/g)?.filter(v => v).join(',');
-            a.addEventListener('click', (_event) => {
-              let excerpt = this.shadowRoot?.querySelector('bible-excerpt');
-              if (excerpt)
-                excerpt.hilightVerses = excerpt.hilightVerses ? '' : vs || '';
-            })
-          }
-        }
-      }
-    }
+  hilight(verses: string) {
+    this.hilightVerses = verses;
+  }
+
+  private activateInnerReferences(text: string) {
+    let refExpression = /([0-9 ][0-9,іта -]*[0-9 ])?(?:вірш[^\s]*)([0-9 ][0-9,іта -]*[0-9 ])?/gmi;
+    return text.replace(refExpression, `<a class="ref-verses" data-ref="$1$2">$&</a>`)
   }
 
   static get greetings() {
@@ -179,19 +146,19 @@ export class BibleReading extends LitElement {
     return html`<h2>${pickOneOf(BibleReading.greetings).replace("ранок", time)}, ${pickOneOf(BibleReading.appeals)}!</h2>`
   }
 
-  async parseLinks(text: string) {
+  async parseLinks(text: string): Promise<string> {
     const inlineRef = /\[[^\[\]]+\]/gm;
     var refGroups = (await Promise.all((text.match(inlineRef) || [])
       .map(match => match.substring(1, match.length - 1)) // remove square braces
-      .map(async refString => await this.bible.parseExcerpts(refString))))
-      .map(excerpts => {
-        let links: string[] = excerpts.map(ex => `<a href="${ex.url}">${ex.reference}</a>`)
-        return links.join(", ");
-      });
+      .map(async refString => {
+        let refs = BibleController.parseReferenses(refString);
+        let urls = await this.bible.getUrls(refs);
+        return refs.map((ref, i) => `<a href="${urls[i]}">${ref.reference}</a>`).join(", ");
+      })))
     return text.split(inlineRef).map((part, index) => refGroups[index] ? part + refGroups[index] : part).join("");
   }
 
-  parseMarkdown(content: string) {
+  parseMarkdown(content: string): string {
     return marked.parse(content, { async: false })
   }
 
@@ -199,25 +166,17 @@ export class BibleReading extends LitElement {
     if (_changedProperties.has("date")) {
       this.getReadingData(this.date).then(() => { this.requestUpdate() });
     }
-    if (_changedProperties.has("day") && this.day) {
-      this.bible.reference = this.day.reading;
-    }
-    if (this.day) {
-      if (this.day.questions) {
+    if (_changedProperties.has("day")) {
+      if (this.day?.questions) {
         this.parseLinks(this.parseMarkdown(this.day.questions))
-          .then(content => {
-            this.questions = content;
-          });
+          .then(content => this.activateInnerReferences(content))
+          .then(questions => { this.questions = questions });
       } else this.questions = '';
-      if (this.day.exposition) {
+      if (this.day?.exposition) {
         this.parseLinks(this.parseMarkdown(this.day.exposition))
-          .then(content => {
-            this.exposition = content;
-          });
+          .then(content => this.activateInnerReferences(content))
+          .then(exposition => { this.exposition = exposition });
       } else this.exposition = '';
-    } else {
-      this.questions = '';
-      this.exposition = '';
     }
   }
 
@@ -235,12 +194,14 @@ export class BibleReading extends LitElement {
       getJSONP<RawReadingDay[]>(this.readingUrl, `date=${this.date.toDateString()}`)
         .then(rdays => { this.month = rdays.map(objToReadingDay) })
     }
-
-  }
-
-  protected updated(_changedProperties: PropertyValues<BibleReading>): void {
-    if (_changedProperties.has("questions") || _changedProperties.has("exposition")) {
-      this.activateReferences();
+    if (this.shadowRoot) {
+      this.shadowRoot.addEventListener('click', (e: Event) => {
+        let target = e.target as HTMLElement;
+        if (target.tagName == "A" && target.className.includes('ref-verses')) {
+          let verses = target.dataset.ref?.trim().replace(/і|та/gi, ",") || '';
+          this.hilightVerses = this.hilightVerses == verses ? '' : verses;
+        }
+      })
     }
   }
 
@@ -248,10 +209,13 @@ export class BibleReading extends LitElement {
     return html`<day-selector .month=${this.month} @date-selected="${(event: DateSelectedEvent<ReadingDay>) => {
       this.date = event.detail.date;
     }}"></day-selector>
-    ${this.day
+    ${this.day && this.day.reading
         ? html`${this.greeting(this.day.date)}
     <p>Сьогодні читаємо:</p>
-    <bible-excerpt reference="${this.day.reading}"></bible-excerpt>
+    <bible-excerpt
+      defaultTranslation="UBIO"
+      reference="${this.day.reading}" 
+      .hilightVerses="${this.hilightVerses}"></bible-excerpt>
     ${unsafeHTML(this.questions)}
     ${unsafeHTML(this.exposition)}`
         : nothing}`

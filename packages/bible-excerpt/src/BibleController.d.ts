@@ -1,20 +1,22 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
-import { BibleExcerptData, BibleReference, BollsController } from "../../utils/bolls.js";
-import { type BibleDataSource } from './bible-excerpt.js';
-export declare class BibleController implements ReactiveController, BibleDataSource {
-    static remote: BollsController;
-    static parseReferenses(refs: string): BibleReference[];
-    static parseExcerpts(refs: string): Promise<BibleExcerptData[]>;
-    static refAnchor(ref: BibleReference): Promise<string>;
+import { BibleExcerptData, BibleReference, BollsBible, BollsBibleService } from "../../utils/bolls.js";
+type BibleReferenceContext = Partial<BibleReference>;
+export declare class BibleController implements ReactiveController {
+    static parseReferenses(refs: string, context?: BibleReferenceContext): BibleReference[];
+    getExcerpts(refs: BibleReference[]): Promise<BibleExcerptData[]>;
+    getUrls(refs: BibleReference[]): Promise<string[]>;
     host: ReactiveControllerHost;
+    remote: BollsBibleService;
+    defaultTranslation: string;
     private _reference;
     get reference(): string;
     set reference(ref: string);
     excerpts: BibleExcerptData[];
-    constructor(host: ReactiveControllerHost);
+    constructor(host: ReactiveControllerHost, defaultTranslation: BollsBible.Translation['short_name'], languages?: string[], translations?: BollsBible.Translation['short_name'][]);
     hostConnected(): void;
     hostDisconnected(): void;
     hostUpdate(): void;
     hostUpdated(): void;
 }
+export {};
 //# sourceMappingURL=BibleController.d.ts.map

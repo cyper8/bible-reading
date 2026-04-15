@@ -4,10 +4,12 @@ export async function getJSONP(endpoint, params = '') {
             ? params
             : Object.entries(params).map(([k, v]) => k.toString() + '=' + v.toString()).join("&")
         : '') + "&callback=" + handlerName;
-    var script, modifiedTopContext;
+    var script;
     return new Promise((resolve, _reject) => {
         script = document.createElement('script');
-        modifiedTopContext = Object.defineProperty(window, handlerName, {
+        if (handlerName in window)
+            delete window[handlerName];
+        Object.defineProperty(window, handlerName, {
             value: resolve,
             enumerable: true,
             configurable: true
@@ -17,6 +19,5 @@ export async function getJSONP(endpoint, params = '') {
     })
         .finally(() => {
         document.head.removeChild(script);
-        delete modifiedTopContext[handlerName];
     });
 }

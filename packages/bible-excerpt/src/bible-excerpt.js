@@ -13,7 +13,8 @@ import { BibleController } from './BibleController.js';
 let BibleExcerpt = class BibleExcerpt extends LitElement {
     constructor() {
         super(...arguments);
-        this.bible = new BibleController(this);
+        this.defaultTranslation = 'UBIO';
+        this.bible = new BibleController(this, this.defaultTranslation);
         this.hilightVerses = '';
         this.reference = '';
     }
@@ -37,20 +38,21 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
       </p>
     </label>`;
     }
-    bExcerpt(excerpt, hilight = '') {
-        let hilighted = hilight ? spreadNumbers(hilight) : [];
-        return html `<div class="excerpt"><h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}</div>`;
-    }
     willUpdate(_changedProperties) {
         if (_changedProperties.has("reference")) {
-            if (this.reference !== this.bible.reference) {
-                this.bible.reference = this.reference;
-            }
+            this.bible.reference = this.reference;
         }
     }
     render() {
-        return this.bible.excerpts
-            .map((excerpt) => html `<section class="bible">${this.bExcerpt(excerpt, this.hilightVerses)}</section>`);
+        if (this.bible.excerpts.length) {
+            let hilighted = this.hilightVerses ? spreadNumbers(this.hilightVerses) : [];
+            return html `<section class="bible">
+        ${this.bible.excerpts.map(excerpt => html `<div class="excerpt">
+          <h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>
+        ${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}
+        </div>`)}
+      </section>`;
+        }
     }
     static { this.styles = [css `
   :host {
@@ -130,10 +132,10 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
   `]; }
 };
 __decorate([
-    property({ type: Object })
-], BibleExcerpt.prototype, "bible", void 0);
+    property({ type: String })
+], BibleExcerpt.prototype, "defaultTranslation", void 0);
 __decorate([
-    property({ type: String, attribute: 'hilight-verses' })
+    property({ type: String, attribute: 'hilight-vrsees' })
 ], BibleExcerpt.prototype, "hilightVerses", void 0);
 __decorate([
     property({ type: String })
