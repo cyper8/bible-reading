@@ -1,1 +1,1 @@
-export { BibleReading } from "./src/bible-reading.js";
+export { BibleReading, stripHours, isRawReadingDay } from "./src/bible-reading.js";

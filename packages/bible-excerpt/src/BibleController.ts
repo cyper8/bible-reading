@@ -1,22 +1,21 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
-import { BibleExcerptData, BibleReference, BollsController } from "../../utils/bolls.js";
+import { BibleExcerptData, BibleReference, BollsBible, BollsBibleService } from "../../utils/bolls.js";
 import { spreadNumbers } from "../../utils/spreadNumbers.js";
-import { type BibleDataSource } from './bible-excerpt.js';
 
-const DEFAULT_TRANSLATION = 'UBIO';
+type BibleReferenceContext = Partial<BibleReference>
 
-export class BibleController implements ReactiveController, BibleDataSource {
-  static remote = new BollsController(DEFAULT_TRANSLATION, ['Ukrainian']);
+export class BibleController implements ReactiveController {
 
-  static parseReferenses(refs: string): BibleReference[] {
+  static parseReferenses(refs: string, context?: BibleReferenceContext): BibleReference[] {
     return refs.split(',')
       .reduce((result: BibleReference[], ref, i, _originalRefs) => {
+        let refContext = (context ? [context] : []).concat(result);
         let translation: string | undefined, foundtranslations: string[] | null = ref.trim().match(/\([A-Z0-9]+\)/);
         if (foundtranslations && foundtranslations.length) {
           ref = ref.replace(foundtranslations[0], '').trim();
           translation = foundtranslations[0].replace(/[\(\)]/g, '');
         } else {
-          translation = i > 0 ? result[i - 1].translation : undefined;
+          translation = refContext.at(i - 1)?.translation || undefined;
           ref = ref.trim();
         }
         let stances: string[] = ref.split(':'),
@@ -27,11 +26,11 @@ export class BibleController implements ReactiveController, BibleDataSource {
           bookName = stances[0].replace(chapterspreads[0], '').trim();
         }
         else {
-          chapters = i > 0 ? [result[i - 1].chapter] : [1];
+          chapters = [refContext.at(i - 1)?.chapter || 1];
           bookName = stances[0].trim();
         };
         if (bookName === '') {
-          bookName = i > 0 ? result[i - 1].bookName : '';
+          bookName = refContext.at(i - 1)?.bookName || '';
         }
         if (bookName)
           chapters.forEach((chapter, i) => {
@@ -54,29 +53,62 @@ export class BibleController implements ReactiveController, BibleDataSource {
       }, [])
   }
 
-  static async parseExcerpts(refs: string) {
-    return Promise.all(this.parseReferenses(refs).map(ref => this.remote.getExcerpt(ref)))
+  async getExcerpts(refs: BibleReference[]): Promise<BibleExcerptData[]> {
+    return Promise.all(refs.map(async ref => {
+      let book = await this.remote.getBook(ref.bookName, this.defaultTranslation);
+      let translation = ref.translation || this.defaultTranslation;
+      let bookNum = book.bookid;
+      let chapter = ref.chapter;
+      var versesData = await BollsBibleService.fetchChapter(translation, bookNum, chapter);
+      if (ref.verses && ref.verses.length) {
+        versesData = versesData.filter(verse => ref.verses!.includes(verse.verse));
+      }
+      return {
+        ...ref,
+        translation,
+        reference: ref.reference + (ref.translation ? '' : ` (${translation})`),
+        bookNum,
+        versesData,
+        url: BollsBibleService.getChapterUrl(translation, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined)
+      }
+    }))
   }
 
-  static async refAnchor(ref: BibleReference): Promise<string> {
-    let url = await this.remote.getChapterUrl(ref);
-    return `<a href="${url}">${ref.reference}</a>`
+  async getUrls(refs: BibleReference[]): Promise<string[]> {
+    return Promise.all(
+      refs.map(async ref => {
+        let book = await this.remote.getBook(ref.bookName, this.defaultTranslation);
+        return BollsBibleService.getChapterUrl(
+          ref.translation || this.defaultTranslation,
+          book.bookid,
+          ref.chapter,
+          ref.verses?.length ? ref.verses[0] : undefined
+        )
+      })
+    )
   }
 
   host: ReactiveControllerHost;
 
+  remote = new BollsBibleService();
+
+  defaultTranslation: string;
+
   private _reference: string = '';
   get reference() { return this._reference };
   set reference(ref: string) {
-    BibleController.parseExcerpts(ref)
+    this.getExcerpts(BibleController.parseReferenses(ref))
       .then(excerpts => this.excerpts = excerpts)
       .finally(() => { this.host.requestUpdate() })
   }
 
   excerpts: BibleExcerptData[] = [];
 
-  constructor(host: ReactiveControllerHost) {
+  constructor(host: ReactiveControllerHost, defaultTranslation: BollsBible.Translation['short_name'], languages?: string[], translations?: BollsBible.Translation['short_name'][]) {
     this.host = host;
+    if (languages && languages.length) this.remote.selectLanguages(languages);
+    if (translations && translations.length) this.remote.selectTranslations(translations);
+    this.defaultTranslation = defaultTranslation;
   }
 
   hostConnected(): void { }

@@ -1,17 +1,13 @@
 import { LitElement, PropertyValues } from 'lit';
-import { BibleExcerptData } from '../../utils/bolls.js';
-export interface BibleDataSource {
-    reference: string;
-    excerpts: BibleExcerptData[];
-}
+import { BibleController } from './BibleController.js';
 export declare class BibleExcerpt extends LitElement {
-    bible: BibleDataSource;
+    defaultTranslation: string;
+    bible: BibleController;
     hilightVerses: string;
     reference: string;
     private bChapterVerse;
-    private bExcerpt;
     protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void;
-    render(): import("lit-html").TemplateResult<1>[];
+    render(): import("lit-html").TemplateResult<1> | undefined;
     static styles: import("lit").CSSResult[];
 }
 declare global {

@@ -2,19 +2,15 @@ import { LitElement, PropertyValues, css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { BibleExcerptData, type BollsBible } from '../../utils/bolls.js';
+import { type BollsBible } from '../../utils/bolls.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
 import { BibleController } from './BibleController.js';
 
-export interface BibleDataSource {
-  reference: string
-  excerpts: BibleExcerptData[]
-}
-
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
-  @property({ type: Object }) bible: BibleDataSource = new BibleController(this);
-  @property({ type: String, attribute: 'hilight-verses' }) hilightVerses: string = '';
+  @property({ type: String }) defaultTranslation: string = 'UBIO';
+  bible = new BibleController(this, this.defaultTranslation);
+  @property({ type: String, attribute: 'hilight-vrsees' }) hilightVerses: string = '';
   @property({ type: String }) reference: string = '';
 
   private bChapterVerse(verse: BollsBible.ChapterVerse, hilight = false) {
@@ -38,23 +34,22 @@ export class BibleExcerpt extends LitElement {
     </label>`
   }
 
-  private bExcerpt(excerpt: BibleExcerptData, hilight: string = '') {
-    let hilighted = hilight ? spreadNumbers(hilight) : [];
-    return html`<div class="excerpt"><h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))
-      }</div>`
-  }
-
   protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void {
     if (_changedProperties.has("reference")) {
-      if (this.reference !== this.bible.reference) {
-        this.bible.reference = this.reference;
-      }
+      this.bible.reference = this.reference;
     }
   }
 
   render() {
-    return this.bible.excerpts
-      .map((excerpt) => html`<section class="bible">${this.bExcerpt(excerpt, this.hilightVerses)}</section>`);
+    if (this.bible.excerpts.length) {
+      let hilighted = this.hilightVerses ? spreadNumbers(this.hilightVerses) : [];
+      return html`<section class="bible">
+        ${this.bible.excerpts.map(excerpt => html`<div class="excerpt">
+          <h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>
+        ${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}
+        </div>`)}
+      </section>`;
+    }
   }
 
   /**
