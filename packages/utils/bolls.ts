@@ -192,61 +192,60 @@ export class BollsBibleService {
       })).flat();
     let qwords: string[] = query.split(" ");
     return selectedBooks.reduce<BookSearchResult[]>((matches: BookSearchResult[], book: BookSearchResult) => {
-      let name = book.name.toWellFormed?.() || book.name;
+      let name = book.name;//.toWellFormed?.() || book.name;
       let matchWeight = 0;
       let match = qwords.filter((qword) => {
         if (/[0-9]/.test(qword)) {    // numbers from qwords matched separately
           let numtest = qword.replace(/[^0-9]/g, "");
           if (RegExp(numtest).test(name)) {
-              matchWeight += 2;
-              return true;
+            matchWeight += 2;
+            return true;
           } else
-              return false;
+            return false;
         } else {
           let matchLength = 0;
           var test = "";
           var skipcount = 0;
           var matchcount = 0;
           var len = 0;
-          const compileExpr = (q: string) => new RegExp(`(\\s|^)${
-              q.replace(/(?<=\s|^)(ів|йо|іо)/ig, "(ів|іо|йо)") // popular variations in ukrainian translations of John's book naming
-          }${len == qword.length - 1 ? '(\\s|$)' : ''}`,"igu");
+          const compileExpr = (q: string) => new RegExp(`(\\s|^)${q.replace(/(?<=\s|^)(ів|йо|іо)/ig, "(ів|іо|йо)") // popular variations in ukrainian translations of John's book naming
+            }${len == qword.length - 1 ? '(\\s|$)' : ''}`, "igu");
           var expr;
           for (; len < qword.length; len++) {
-              test += qword[len];
-              expr = compileExpr(test);
-              if (!(expr.test(name))) {
-                  if (skipcount < MAX_SKIPS && matchcount >= MIN_MATCHES) {
-                      skipcount++;
-                      if (skipcount == MAX_SKIPS)
-                          matchcount = 0;
-                      test = test.slice(0, len) + ".";
-                      expr = compileExpr(test);
-                      if (!(expr.test(name))) {
-                          break;
-                      }
-                  } else
-                      break;
-              } else {
-                  skipcount = 0;
-                  matchcount++;
-              }
-              matchLength = len + 1;
-              if (len == qword.length - 1)
-                  matchLength += 1;
+            test += qword[len];
+            expr = compileExpr(test);
+            if (!(expr.test(name))) {
+              if (skipcount < MAX_SKIPS && matchcount >= MIN_MATCHES) {
+                skipcount++;
+                if (skipcount == MAX_SKIPS)
+                  matchcount = 0;
+                test = test.slice(0, len) + ".";
+                expr = compileExpr(test);
+                if (!(expr.test(name))) {
+                  break;
+                }
+              } else
+                break;
+            } else {
+              skipcount = 0;
+              matchcount++;
+            }
+            matchLength = len + 1;
+            if (len == qword.length - 1)
+              matchLength += 1;
           }
           if (matchLength) {
-              matchWeight += matchLength;
-              return true;
+            matchWeight += matchLength;
+            return true;
           } else
-              return false;
+            return false;
         }
       });
       if (match.length && matchWeight) {
         let searchWeight = Math.round((matchWeight / name.length) * 100);
         if (searchWeight > 30) {
-            book.searchWeight = searchWeight;
-            matches.push(book);
+          book.searchWeight = searchWeight;
+          matches.push(book);
         }
       }
       return matches
