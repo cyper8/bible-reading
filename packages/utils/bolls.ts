@@ -180,6 +180,8 @@ export class BollsBibleService {
 
   async bookSearch(query: string): Promise<BookSearchResult[]> {
     //const MIN_MATCH_LENGTH = 1;
+    const MAX_SKIPS = 1;
+    const MIN_MATCHES = 3;
     let selectedBooks: BookSearchResult[] = (await this.library)
       .map(e => e.books.map(b => {
         return {
@@ -190,52 +192,61 @@ export class BollsBibleService {
       })).flat();
     let qwords: string[] = query.split(" ");
     return selectedBooks.reduce<BookSearchResult[]>((matches: BookSearchResult[], book: BookSearchResult) => {
+      let name = book.name.toWellFormed?.() || book.name;
       let matchWeight = 0;
       let match = qwords.filter((qword) => {
         if (/[0-9]/.test(qword)) {    // numbers from qwords matched separately
-          if (RegExp(qword.replace(/[^0-9]/g, "")).test(book.name)) {
-            matchWeight += 3;
-            return true;
-          } else return false
+          let numtest = qword.replace(/[^0-9]/g, "");
+          if (RegExp(numtest).test(name)) {
+              matchWeight += 2;
+              return true;
+          } else
+              return false;
         } else {
-          //if (subQ.length < MIN_MATCH_LENGTH) return true;
           let matchLength = 0;
-          var len = 0;//Math.max(Math.floor(subQ.length*0.7), MIN_MATCH_LENGTH);
-          var skip = 0;
           var test = "";
+          var skipcount = 0;
+          var matchcount = 0;
+          var len = 0;
+          const compileExpr = (q: string) => new RegExp(`(\\s|^)${
+              q.replace(/(?<=\s|^)(ів|йо|іо)/ig, "(ів|іо|йо)") // popular variations in ukrainian translations of John's book naming
+          }${len == qword.length - 1 ? '(\\s|$)' : ''}`,"igu");
+          var expr;
           for (; len < qword.length; len++) {
-            if (skip) {
-              test = test.slice(0, len - 1) + ".";
-            }
-            test = test + qword[len];
-            let exp = new RegExp(`(?<=\\s|^)${test.replace(/(і|й|и)/gi, "(і|и|й)")}${len == qword.length - 1 ? '(?=\\s|$)' : ''}`, "ig");
-            if (exp.test(book.name)) {
-              if (skip) {
-                skip = skip - 1;
+              test += qword[len];
+              expr = compileExpr(test);
+              if (!(expr.test(name))) {
+                  if (skipcount < MAX_SKIPS && matchcount >= MIN_MATCHES) {
+                      skipcount++;
+                      if (skipcount == MAX_SKIPS)
+                          matchcount = 0;
+                      test = test.slice(0, len) + ".";
+                      expr = compileExpr(test);
+                      if (!(expr.test(name))) {
+                          break;
+                      }
+                  } else
+                      break;
               } else {
-                matchLength = len;
+                  skipcount = 0;
+                  matchcount++;
               }
-              if (len == qword.length - 1) matchLength += 2;
-            } else {
-              if (skip > 1) {
-                skip = 0;
-                break;
-              } else {
-                skip = skip + 1;
-              }
-            };
+              matchLength = len + 1;
+              if (len == qword.length - 1)
+                  matchLength += 1;
           }
           if (matchLength) {
-            matchWeight += matchLength;
-            return true;
-          } else return false
+              matchWeight += matchLength;
+              return true;
+          } else
+              return false;
         }
       });
       if (match.length && matchWeight) {
-        let searchWeight = matchWeight * match.length + (book.name.split(" ").length == match.length ? 2 : -3);
-        if (searchWeight > 3) {
-          book.searchWeight = searchWeight;
-          matches.push(book);
+        let searchWeight = Math.round((matchWeight / name.length) * 100);
+        if (searchWeight > 30) {
+            book.searchWeight = searchWeight;
+            matches.push(book);
         }
       }
       return matches
@@ -245,7 +256,7 @@ export class BollsBibleService {
 
   async getBook(bookName: string, translation?: BollsBible.Translation['short_name']): Promise<BollsBible.Book> {
     let searchInEdition = (await this.bookSearch(bookName.toString()))
-      .filter(sr => sr.searchWeight >= bookName.length * 0.7), result: BollsBible.Book[] = searchInEdition;
+      .filter(sr => sr.searchWeight >= 60), result: BollsBible.Book[] = searchInEdition;
     if (searchInEdition.length) {
       if (translation) {
         result = searchInEdition.filter(book => book.translation == translation);
