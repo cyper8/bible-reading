@@ -19,7 +19,7 @@ export declare class BibleReading extends LitElement {
     date: string;
     defaultTranslation: BollsBible.Translation['short_name'];
     bible: BibleController;
-    mode: 'static' | 'dynamic';
+    static: boolean;
     month: ReadingDay[];
     day?: ReadingDay;
     questions: string;

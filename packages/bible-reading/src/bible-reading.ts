@@ -57,7 +57,7 @@ export class BibleReading extends LitElement {
   @property({ type: String }) date: string = stripHours(new Date()).toDateString();
   @property({ type: String }) defaultTranslation: BollsBible.Translation['short_name'] = 'UBIO';
   bible = new BibleController(this, this.defaultTranslation, ['Ukrainian']);
-  @property({ type: String }) mode: 'static' | 'dynamic' = 'dynamic';
+  @property({ type: Boolean }) static = false;
   @state() month: ReadingDay[] = [];
   @state() day?: ReadingDay;
   @state() questions: string = '';
@@ -66,7 +66,7 @@ export class BibleReading extends LitElement {
 
   private getReadingData = async (date: Date) => {
     if (this.readingUrl && date) {
-      if (this.mode == 'static') {
+      if (this.static) {
         try {
           //window.location.
           let href = encodeURI(this.readingUrl + `?date=${date.toDateString()}`);
@@ -197,14 +197,14 @@ export class BibleReading extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     if (this.innerHTML?.trim()) { //static data parsing
-      this.mode = 'static';
+      this.static = true;
       this.month = this.parseReadingFromJSON(this.innerHTML);
       let params = new URLSearchParams(location.search);
       if (params.has("date")) {
         this.date = stripHours(new Date(params.get("date")!)).toDateString()
       }
     } else { // getting data dynamically
-      this.mode = 'dynamic';
+      this.static = false;
       this.getReadingData(new Date(this.date));
     }
 

@@ -40,14 +40,14 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
         this.date = stripHours(new Date()).toDateString();
         this.defaultTranslation = 'UBIO';
         this.bible = new BibleController(this, this.defaultTranslation, ['Ukrainian']);
-        this.mode = 'dynamic';
+        this.static = false;
         this.month = [];
         this.questions = '';
         this.exposition = '';
         this.hilightVerses = '';
         this.getReadingData = async (date) => {
             if (this.readingUrl && date) {
-                if (this.mode == 'static') {
+                if (this.static) {
                     try {
                         let href = encodeURI(this.readingUrl + `?date=${date.toDateString()}`);
                         let link = document.createElement("a");
@@ -177,7 +177,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     connectedCallback() {
         super.connectedCallback();
         if (this.innerHTML?.trim()) {
-            this.mode = 'static';
+            this.static = true;
             this.month = this.parseReadingFromJSON(this.innerHTML);
             let params = new URLSearchParams(location.search);
             if (params.has("date")) {
@@ -185,7 +185,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
             }
         }
         else {
-            this.mode = 'dynamic';
+            this.static = false;
             this.getReadingData(new Date(this.date));
         }
         if (this.shadowRoot) {
@@ -283,8 +283,8 @@ __decorate([
     property({ type: String })
 ], BibleReading.prototype, "defaultTranslation", void 0);
 __decorate([
-    property({ type: String })
-], BibleReading.prototype, "mode", void 0);
+    property({ type: Boolean })
+], BibleReading.prototype, "static", void 0);
 __decorate([
     state()
 ], BibleReading.prototype, "month", void 0);
