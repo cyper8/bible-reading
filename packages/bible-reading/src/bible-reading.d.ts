@@ -13,14 +13,13 @@ export declare interface ReadingDay extends DayData {
 export type RawReadingDay = {
     [key in keyof ReadingDay]: string;
 };
-export declare const stripHours: (date: Date) => Date;
 export declare function isRawReadingDay(obj: Object): obj is RawReadingDay;
 export declare class BibleReading extends LitElement {
     readingUrl: string;
-    date: Date;
+    date: string;
     defaultTranslation: BollsBible.Translation['short_name'];
     bible: BibleController;
-    private mode;
+    mode: 'static' | 'dynamic';
     month: ReadingDay[];
     day?: ReadingDay;
     questions: string;
@@ -32,9 +31,11 @@ export declare class BibleReading extends LitElement {
     private activateInnerReferences;
     static get greetings(): string[];
     static get appeals(): string[];
-    greeting(date: Date): import("lit-html").TemplateResult<1>;
+    static greeting(date: Date): import("lit-html").TemplateResult<1>;
+    private greeting;
     parseLinks(text: string): Promise<string>;
     parseMarkdown(content: string): string;
+    protected updated(_changedProperties: PropertyValues<BibleReading>): void;
     protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void;
     connectedCallback(): void;
     protected render(): unknown;

@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "moduleResolution":"node",
+    "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "module": "esnext",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
@@ -19,8 +23,14 @@
     "removeComments": true
   },
   "references": [
-    {"path": "./packages/bible-excerpt/tsconfig.json"},
-    {"path": "./packages/bible-reading/tsconfig.json"},
-    {"path": "./packages/day-selector/tsconfig.json"}
+    {
+      "path": "./packages/bible-excerpt/tsconfig.json"
+    },
+    {
+      "path": "./packages/bible-reading/tsconfig.json"
+    },
+    {
+      "path": "./packages/day-selector/tsconfig.json"
+    }
   ]
 }

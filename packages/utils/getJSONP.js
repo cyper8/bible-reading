@@ -14,7 +14,7 @@ export async function getJSONP(endpoint, params = '') {
             enumerable: true,
             configurable: true
         });
-        script.src = endpoint + '?' + requestParams;
+        script.src = encodeURI(endpoint + '?' + requestParams);
         document.head.appendChild(script);
     })
         .finally(() => {

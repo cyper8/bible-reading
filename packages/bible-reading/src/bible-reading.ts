@@ -10,6 +10,7 @@ import { pickOneOf } from "../../utils/pickOneOf.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { DateSelectedEvent, DayData } from "../../day-selector/src/day-selector.js";
 import { getJSONP } from "../../utils/getJSONP.js";
+import { stripHours } from "../../utils/stripHours.js";
 
 export declare interface ReadingDay extends DayData {
   date: Date;
@@ -18,8 +19,6 @@ export declare interface ReadingDay extends DayData {
   exposition: string;
 }
 export type RawReadingDay = { [key in keyof ReadingDay]: string }
-
-export const stripHours = (date: Date) => (date.setHours(0, 0, 0, 0), date);
 const objToReadingDay: (object: RawReadingDay) => ReadingDay = (object: RawReadingDay) => {
   return {
     date: new Date(object.date),
@@ -55,10 +54,10 @@ export function isRawReadingDay(obj: Object): obj is RawReadingDay {
 export class BibleReading extends LitElement {
 
   @property({ type: String }) readingUrl: string = '';
-  @property({ type: Date }) date: Date = stripHours(new Date());
+  @property({ type: String }) date: string = stripHours(new Date()).toDateString();
   @property({ type: String }) defaultTranslation: BollsBible.Translation['short_name'] = 'UBIO';
   bible = new BibleController(this, this.defaultTranslation, ['Ukrainian']);
-  private mode: 'static' | 'dynamic' = 'dynamic';
+  @property({ type: String }) mode: 'static' | 'dynamic' = 'dynamic';
   @state() month: ReadingDay[] = [];
   @state() day?: ReadingDay;
   @state() questions: string = '';
@@ -66,28 +65,27 @@ export class BibleReading extends LitElement {
   @state() hilightVerses: string = '';
 
   private getReadingData = async (date: Date) => {
-    const month = date.getMonth();
-    const year = date.getFullYear();
-    var reading: Promise<ReadingDay[]>;
-    if (this.month.length
-      && this.month[0].date.getMonth() == month
-      && this.month[0].date.getFullYear() == year) {
-      reading = Promise.resolve(this.month);
-    } else {
+    if (this.readingUrl && date) {
       if (this.mode == 'static') {
-        window.location.href = this.readingUrl + `?date=${date.toDateString()}`;
+        try {
+          //window.location.
+          let href = encodeURI(this.readingUrl + `?date=${date.toDateString()}`);
+          let link = document.createElement("a");
+          link.href = href;
+          link.addEventListener("click", () => { this.removeChild(link) })
+          this.appendChild(link);
+          link.click();
+        } catch (error) {
+          console.error(error);
+        }
         return;
       } else {
-        reading = getJSONP<RawReadingDay[]>(this.readingUrl, `date=${date.toDateString()}`)
-          .then(rdays =>
-            rdays.map(objToReadingDay)
-          );
+        getJSONP<RawReadingDay[]>(this.readingUrl, `date=${date.toDateString()}`)
+          .then(rdays => {
+            this.month = rdays.map(objToReadingDay);
+          });
       }
-    }
-    await reading.then(rdays => {
-      this.month = rdays;
-      this.day = this.month.find(reading => reading.date.getTime() == date.getTime());
-    })
+    } else throw new Error('No reading URL or date is specified');
   }
 
   parseReadingFromJSON(json: string): ReadingDay[] {
@@ -140,11 +138,13 @@ export class BibleReading extends LitElement {
     ]
   }
 
-  greeting(date: Date) {
+  static greeting(date: Date) {
     let hours = date.getHours(),
       time = hours > 15 ? "вечір" : hours > 10 ? "день" : "ранок";
-    return html`<h2>${pickOneOf(BibleReading.greetings).replace("ранок", time)}, ${pickOneOf(BibleReading.appeals)}!</h2>`
+    return html`<h2>${pickOneOf(this.greetings).replace("ранок", time)}, ${pickOneOf(this.appeals)}!</h2>`
   }
+
+  private greeting = BibleReading.greeting(new Date());
 
   async parseLinks(text: string): Promise<string> {
     const inlineRef = /\[[^\[\]]+\]/gm;
@@ -162,21 +162,35 @@ export class BibleReading extends LitElement {
     return marked.parse(content, { async: false })
   }
 
-  protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void {
-    if (_changedProperties.has("date")) {
-      this.getReadingData(this.date).then(() => { this.requestUpdate() });
+  protected updated(_changedProperties: PropertyValues<BibleReading>): void {
+    if (_changedProperties.has("date") || _changedProperties.has("month")) {
+      if (this.date) {
+        let date = new Date(this.date)
+        if (this.month.length == 0
+          || this.month[0].date.getMonth() !== date.getMonth()
+          || this.month[0].date.getFullYear() !== date.getFullYear()) {
+          this.getReadingData(date);
+        } else {
+          this.day = this.month.find(dd => dd.date.getTime() == date.getTime())
+        }
+      }
     }
+  }
+
+  protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void {
     if (_changedProperties.has("day")) {
-      if (this.day?.questions) {
-        this.parseLinks(this.parseMarkdown(this.day.questions))
-          .then(content => this.activateInnerReferences(content))
-          .then(questions => { this.questions = questions });
-      } else this.questions = '';
-      if (this.day?.exposition) {
-        this.parseLinks(this.parseMarkdown(this.day.exposition))
-          .then(content => this.activateInnerReferences(content))
-          .then(exposition => { this.exposition = exposition });
-      } else this.exposition = '';
+      if (this.day) {
+        if (this.day.questions) {
+          this.parseLinks(this.parseMarkdown(this.day.questions))
+            .then(content => this.activateInnerReferences(content))
+            .then(questions => { this.questions = questions });
+        } else this.questions = '';
+        if (this.day.exposition) {
+          this.parseLinks(this.parseMarkdown(this.day.exposition))
+            .then(content => this.activateInnerReferences(content))
+            .then(exposition => { this.exposition = exposition });
+        } else this.exposition = '';
+      }
     }
   }
 
@@ -187,13 +201,13 @@ export class BibleReading extends LitElement {
       this.month = this.parseReadingFromJSON(this.innerHTML);
       let params = new URLSearchParams(location.search);
       if (params.has("date")) {
-        this.date = stripHours(new Date(params.get("date")!))
+        this.date = stripHours(new Date(params.get("date")!)).toDateString()
       }
     } else { // getting data dynamically
       this.mode = 'dynamic';
-      getJSONP<RawReadingDay[]>(this.readingUrl, `date=${this.date.toDateString()}`)
-        .then(rdays => { this.month = rdays.map(objToReadingDay) })
+      this.getReadingData(new Date(this.date));
     }
+
     if (this.shadowRoot) {
       this.shadowRoot.addEventListener('click', (e: Event) => {
         let target = e.target as HTMLElement;
@@ -206,18 +220,19 @@ export class BibleReading extends LitElement {
   }
 
   protected render(): unknown {
-    return html`<day-selector .month=${this.month} @date-selected="${(event: DateSelectedEvent<ReadingDay>) => {
-      this.date = event.detail.date;
-    }}"></day-selector>
-    ${this.day && this.day.reading
-        ? html`${this.greeting(this.day.date)}
-    <p>Сьогодні читаємо:</p>
+    return html`<day-selector .month=${this.month} date=${this.date} 
+    @date-selected="${(event: DateSelectedEvent<ReadingDay>) => {
+        this.date = event.detail.date.toDateString();
+      }}"></day-selector>
+    ${this.day
+        ? html`${this.greeting}
+    ${this.day.reading ? html`<p>Сьогодні читаємо:</p>
     <bible-excerpt
-      defaultTranslation="UBIO"
+      defaultTranslation="${this.defaultTranslation}"
       reference="${this.day.reading}" 
       .hilightVerses="${this.hilightVerses}"></bible-excerpt>
     ${unsafeHTML(this.questions)}
-    ${unsafeHTML(this.exposition)}`
+    ${unsafeHTML(this.exposition)}` : nothing}`
         : nothing}`
   }
 

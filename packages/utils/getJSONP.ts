@@ -13,7 +13,7 @@ export async function getJSONP<T>(endpoint: string, params: string | Object = ''
       enumerable: true,
       configurable: true
     });
-    script.src = endpoint + '?' + requestParams;
+    script.src = encodeURI(endpoint + '?' + requestParams);
     document.head.appendChild(script);
   })
     .finally(() => {

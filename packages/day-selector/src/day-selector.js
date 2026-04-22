@@ -8,6 +8,7 @@ import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { stripHours } from "../../utils/stripHours.js";
 const getLocaleDayOfWeek = (date) => {
     const locale = new Intl.Locale(navigator.language);
     var weekStart;
@@ -32,14 +33,14 @@ const daysInMonth = (m0, y) => {
 let DaySelector = class DaySelector extends LitElement {
     constructor() {
         super(...arguments);
-        this.date = new Date();
+        this.date = stripHours(new Date()).toDateString();
         this.month = [];
     }
-    genMonth(monthData, currentDate = new Date()) {
+    genMonth(monthData, currentDate = stripHours(new Date())) {
         let month = currentDate.getMonth();
         let year = currentDate.getFullYear();
         let today = currentDate.getDate();
-        let day1 = new Date(year, month, 1);
+        let day1 = new Date(year, month, 1, 0, 0, 0, 0);
         let firstDayOffset = getLocaleDayOfWeek(day1) || 7;
         let monthLength = daysInMonth(month, year);
         let calendarDaysData = Array(monthLength + 2).fill(undefined);
@@ -49,7 +50,7 @@ let DaySelector = class DaySelector extends LitElement {
         return html `<section class="calendar">
       ${weekDaysNames.map(weekdayname => html `<div class="day header">${weekdayname}</div>`)}
       ${calendarDaysData.map((dayData, n, a) => {
-            let date = new Date(year, month, n);
+            let date = new Date(year, month, n, 0, 0, 0, 0);
             let dayOfWeek = getLocaleDayOfWeek(date);
             let isToday = (n == today);
             let nextMonth = (n == a.length - 1);
@@ -67,11 +68,7 @@ let DaySelector = class DaySelector extends LitElement {
                 'grid-column': `span ${prevMonth ? firstDayOffset : (nextMonth ? 7 - dayOfWeek : 1)}`
             })}"
           @click="${() => {
-                this.date = date;
-                this.reportData({
-                    date,
-                    ...(dayData || {})
-                });
+                this.date = date.toDateString();
             }}">${n}</div>`;
         })}</section>`;
     }
@@ -82,12 +79,25 @@ let DaySelector = class DaySelector extends LitElement {
             composed: true
         }));
     }
+    updated(_changedProperties) {
+        if (_changedProperties.has("date")) {
+            let date = stripHours(new Date(this.date));
+            if (this.month.length) {
+                let data = this.month.filter(dd => dd.date.getTime() === date.getTime())[0];
+                this.reportData({
+                    ...(data || {}),
+                    date,
+                });
+            }
+        }
+    }
     render() {
+        let date = new Date(this.date);
         return html `
     <label class="icon" id="clock" for="date-selector-switch">
-      ${(this.date).toLocaleDateString(navigator.language, { dateStyle: 'long' })}<input type=checkbox id="date-selector-switch" hidden />
+      ${date.toLocaleDateString(navigator.language, { dateStyle: 'long' })}<input type=checkbox id="date-selector-switch" hidden />
       <div class="date-selector">
-        ${this.genMonth(this.month, this.date)}
+        ${this.genMonth(this.month, date)}
       </div>
     </label>
     
@@ -197,7 +207,7 @@ let DaySelector = class DaySelector extends LitElement {
     }
 };
 __decorate([
-    property({ type: Date })
+    property({ type: String })
 ], DaySelector.prototype, "date", void 0);
 __decorate([
     property({ type: Array })

@@ -7,9 +7,10 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "start": "npm run build && npm run start -w bible-reading-demo"
+    "start": "concurrently \"tsc --build --watch\" \"npm run start -w bible-reading-demo\""
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "typescript": "^6.0.0",
     "vite": "^7.3.1"
   }

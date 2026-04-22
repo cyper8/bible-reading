@@ -1,7 +1,8 @@
-import { LitElement, css, html } from "lit";
+import { LitElement, PropertyValues, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { stripHours } from "../../utils/stripHours.js";
 
 export interface DayData {
   date: Date
@@ -12,7 +13,7 @@ export declare type DateSelectedEvent<T extends DayData> = CustomEvent<T> & {
 }
 
 /** zero-based day of week (like Date.prototype.getDay) but locale-corrected (if supported by browser) */
-const getLocaleDayOfWeek = (date: Date) => {
+const getLocaleDayOfWeek = (date: Date): number => {
   const locale = new Intl.Locale(navigator.language);
   var weekStart;
   if ("getWeekInfo" in locale) {
@@ -23,11 +24,11 @@ const getLocaleDayOfWeek = (date: Date) => {
   return (date.getDay() + 7 - weekStart) % 7
 }
 
-const weekDaysNames = Array(7)
+const weekDaysNames: string[] = Array(7)
   .fill(0).map((_d, n) => new Date(0, 0, n))
   .reduce((w: Array<any>, d) => w.with(d.getDay() - 1, d.toLocaleDateString(undefined, { weekday: "short" })), Array(7));
 
-const daysInMonth = (m0: number, y?: number) => {
+const daysInMonth = (m0: number, y?: number): number => {
   let d = new Date();
   d.setFullYear(y || d.getFullYear())
   d.setMonth(m0 + 1);
@@ -38,14 +39,14 @@ const daysInMonth = (m0: number, y?: number) => {
 @customElement('day-selector')
 export class DaySelector<T extends DayData> extends LitElement {
 
-  @property({ type: Date }) date: Date = new Date();
+  @property({ type: String }) date: string = stripHours(new Date()).toDateString();
   @property({ type: Array }) month: T[] = [];
 
-  private genMonth(monthData: T[], currentDate: Date = new Date()) {
+  private genMonth(monthData: T[], currentDate: Date = stripHours(new Date())) {
     let month = currentDate.getMonth();
     let year = currentDate.getFullYear();
     let today = currentDate.getDate();
-    let day1 = new Date(year, month, 1);
+    let day1 = new Date(year, month, 1, 0, 0, 0, 0);
     let firstDayOffset = getLocaleDayOfWeek(day1) || 7; // if the month starts from first weekday, add whole week for "to previous month" option plus compensate
     let monthLength = daysInMonth(month, year);
     let calendarDaysData: (T | undefined)[] = Array(monthLength + 2).fill(undefined);
@@ -56,7 +57,7 @@ export class DaySelector<T extends DayData> extends LitElement {
       ${weekDaysNames.map(weekdayname => html`<div class="day header">${weekdayname}</div>`)}
       ${calendarDaysData.map(
       (dayData, n, a) => {
-        let date = new Date(year, month, n);
+        let date = new Date(year, month, n, 0, 0, 0, 0);
         let dayOfWeek = getLocaleDayOfWeek(date);
         let isToday = (n == today);
         let nextMonth = (n == a.length - 1);
@@ -74,11 +75,7 @@ export class DaySelector<T extends DayData> extends LitElement {
           'grid-column': `span ${prevMonth ? firstDayOffset : (nextMonth ? 7 - dayOfWeek : 1)}`
         })}"
           @click="${() => {
-            this.date = date;
-            this.reportData({
-              date,
-              ...(dayData || {})
-            } as T);
+            this.date = date.toDateString();
           }
           }">${n}</div>`
       }
@@ -93,27 +90,41 @@ export class DaySelector<T extends DayData> extends LitElement {
     }) as DateSelectedEvent<T>)
   }
 
+  protected updated(_changedProperties: PropertyValues<this>): void {
+    if (_changedProperties.has("date")) {
+      let date = stripHours(new Date(this.date));
+      if (this.month.length) {
+        let data = this.month.filter(dd => dd.date.getTime() === date.getTime())[0];
+        this.reportData({
+          ...(data || {}),
+          date,
+        } as T);
+      }
+    }
+  }
+
   protected render() {
+    let date = new Date(this.date);
     return html`
     <label class="icon" id="clock" for="date-selector-switch">
-      ${(this.date).toLocaleDateString(
+      ${date.toLocaleDateString(
       navigator.language,
       { dateStyle: 'long' }
     )}<input type=checkbox id="date-selector-switch" hidden />
       <div class="date-selector">
-        ${this.genMonth(this.month, this.date)}
+        ${this.genMonth(this.month, date)}
       </div>
     </label>
     
     `
   }
 
-/**
- * --day-selector-background
- * --day-selector-color
- * --day-selector-hilight
- * --day-selector-hilight-accent
- */
+  /**
+   * --day-selector-background
+   * --day-selector-color
+   * --day-selector-hilight
+   * --day-selector-hilight-accent
+   */
 
   static get styles() {
     return css`

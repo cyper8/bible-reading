@@ -2,7 +2,6 @@ export {
   BibleReading,
   type ReadingDay,
   type RawReadingDay,
-  stripHours,
   isRawReadingDay
 } from "./src/bible-reading.js"
 export {
