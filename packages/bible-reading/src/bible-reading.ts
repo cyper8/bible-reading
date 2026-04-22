@@ -68,13 +68,14 @@ export class BibleReading extends LitElement {
     if (this.readingUrl && date) {
       if (this.static) {
         try {
-          //window.location.
-          let href = encodeURI(this.readingUrl + `?date=${date.toDateString()}`);
-          let link = document.createElement("a");
-          link.href = href;
-          link.addEventListener("click", () => { this.removeChild(link) })
-          this.appendChild(link);
-          link.click();
+          location.href = encodeURI(this.readingUrl + `?date=${date.toDateString()}`);
+          //  or
+          // let href = encodeURI(this.readingUrl + `?date=${date.toDateString()}`);
+          // let link = document.createElement("a");
+          // link.href = href;
+          // link.addEventListener("click", () => { this.removeChild(link) })
+          // this.appendChild(link);
+          // link.click();
         } catch (error) {
           console.error(error);
         }
