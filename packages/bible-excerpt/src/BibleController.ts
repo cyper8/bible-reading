@@ -9,13 +9,13 @@ export class BibleController implements ReactiveController {
   static parseReferenses(refs: string, context?: BibleReferenceContext): BibleReference[] {
     return refs.split(',')
       .reduce((result: BibleReference[], ref, i, _originalRefs) => {
-        let refContext = (context ? [context] : []).concat(result);
-        let translation: string | undefined, foundtranslations: string[] | null = ref.trim().match(/\([A-Z0-9]+\)/);
+        let translation: string | undefined,
+          foundtranslations: string[] | null = ref.trim().match(/\([A-Z0-9]+\)/);
         if (foundtranslations && foundtranslations.length) {
           ref = ref.replace(foundtranslations[0], '').trim();
           translation = foundtranslations[0].replace(/[\(\)]/g, '');
         } else {
-          translation = refContext.at(i - 1)?.translation || undefined;
+          translation = i == 0 ? context?.translation : result[i - 1].translation;
           ref = ref.trim();
         }
         let stances: string[] = ref.split(':'),
@@ -26,11 +26,11 @@ export class BibleController implements ReactiveController {
           bookName = stances[0].replace(chapterspreads[0], '').trim();
         }
         else {
-          chapters = [refContext.at(i - 1)?.chapter || 1];
+          chapters = [i == 0 ? context?.chapter || 1 : result[i - 1].chapter];
           bookName = stances[0].trim();
         };
         if (bookName === '') {
-          bookName = refContext.at(i - 1)?.bookName || '';
+          bookName = i == 0 ? context?.bookName || '' : result[i - 1].bookName;
         }
         if (bookName)
           chapters.forEach((chapter, i) => {
@@ -53,10 +53,19 @@ export class BibleController implements ReactiveController {
       }, [])
   }
 
-  async getExcerpts(refs: BibleReference[]): Promise<BibleExcerptData[]> {
-    return Promise.all(refs.map(async ref => {
+  async getExcerpts(refs: string): Promise<BibleExcerptData[]>
+  async getExcerpts(refs: BibleReference[]): Promise<BibleExcerptData[]>
+  async getExcerpts(refs: string | BibleReference[]): Promise<BibleExcerptData[]> {
+    let references: BibleReference[];
+    if (typeof refs == "string") {
+      references = BibleController.parseReferenses(refs, { translation: this.defaultTranslation });
+    } else {
+      references = refs
+    }
+    return Promise.all(references.map(async ref => {
       let book = await this.remote.getBook(ref.bookName, this.defaultTranslation);
       let translation = ref.translation || this.defaultTranslation;
+      let bookName = book.name;
       let bookNum = book.bookid;
       let chapter = ref.chapter;
       var versesData = await BollsBibleService.fetchChapter(translation, bookNum, chapter);
@@ -67,6 +76,7 @@ export class BibleController implements ReactiveController {
         ...ref,
         translation,
         reference: ref.reference + (ref.translation ? '' : ` (${translation})`),
+        bookName,
         bookNum,
         versesData,
         url: BollsBibleService.getChapterUrl(translation, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined)
@@ -74,9 +84,17 @@ export class BibleController implements ReactiveController {
     }))
   }
 
-  async getUrls(refs: BibleReference[]): Promise<string[]> {
+  async getUrls(refs: string): Promise<string[]>
+  async getUrls(refs: BibleReference[]): Promise<string[]>
+  getUrls(refs: string | BibleReference[]): Promise<string[]> {
+    let references: BibleReference[];
+    if (typeof refs == "string") {
+      references = BibleController.parseReferenses(refs, { translation: this.defaultTranslation });
+    } else {
+      references = refs
+    }
     return Promise.all(
-      refs.map(async ref => {
+      references.map(async ref => {
         let book = await this.remote.getBook(ref.bookName, this.defaultTranslation);
         return BollsBibleService.getChapterUrl(
           ref.translation || this.defaultTranslation,
@@ -97,7 +115,7 @@ export class BibleController implements ReactiveController {
   private _reference: string = '';
   get reference() { return this._reference };
   set reference(ref: string) {
-    this.getExcerpts(BibleController.parseReferenses(ref))
+    this.getExcerpts(ref)
       .then(excerpts => this.excerpts = excerpts)
       .finally(() => { this.host.requestUpdate() })
   }

@@ -4,6 +4,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var BibleExcerpt_1;
 import { LitElement, css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -18,7 +19,8 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
         this.hilightVerses = '';
         this.reference = '';
     }
-    bChapterVerse(verse, hilight = false) {
+    static { BibleExcerpt_1 = this; }
+    static renderChapterVerse(verse, hilight = false) {
         return html `<input type=radio name="note" id="verse${verse.verse}" class="note" />
     <label for="verse${verse.verse}">
       <p 
@@ -49,7 +51,7 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
             return html `<section class="bible">
         ${this.bible.excerpts.map(excerpt => html `<div class="excerpt">
           <h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>
-        ${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}
+        ${excerpt.versesData.map(v => BibleExcerpt_1.renderChapterVerse(v, hilighted.includes(v?.verse)))}
         </div>`)}
       </section>`;
         }
@@ -143,7 +145,7 @@ __decorate([
 __decorate([
     property({ type: String })
 ], BibleExcerpt.prototype, "reference", void 0);
-BibleExcerpt = __decorate([
+BibleExcerpt = BibleExcerpt_1 = __decorate([
     customElement('bible-excerpt')
 ], BibleExcerpt);
 export { BibleExcerpt };

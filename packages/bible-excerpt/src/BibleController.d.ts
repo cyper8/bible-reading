@@ -3,7 +3,9 @@ import { BibleExcerptData, BibleReference, BollsBible, BollsBibleService } from 
 type BibleReferenceContext = Partial<BibleReference>;
 export declare class BibleController implements ReactiveController {
     static parseReferenses(refs: string, context?: BibleReferenceContext): BibleReference[];
+    getExcerpts(refs: string): Promise<BibleExcerptData[]>;
     getExcerpts(refs: BibleReference[]): Promise<BibleExcerptData[]>;
+    getUrls(refs: string): Promise<string[]>;
     getUrls(refs: BibleReference[]): Promise<string[]>;
     host: ReactiveControllerHost;
     remote: BollsBibleService;

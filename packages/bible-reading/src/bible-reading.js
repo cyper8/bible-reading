@@ -66,7 +66,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
             else
                 throw new Error('No reading URL or date is specified');
         };
-        this.greeting = BibleReading_1.greeting(new Date());
+        this.greeting = BibleReading_1.greeting((new Date()).getHours());
     }
     parseReadingFromJSON(json) {
         let data = JSON.parse(json);
@@ -116,8 +116,8 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
             "брати і сестри",
         ];
     }
-    static greeting(date) {
-        let hours = date.getHours(), time = hours > 15 ? "вечір" : hours > 10 ? "день" : "ранок";
+    static greeting(hours24) {
+        let time = hours24 > 15 ? "вечір" : hours24 > 10 ? "день" : "ранок";
         return html `<h2>${pickOneOf(this.greetings).replace("ранок", time)}, ${pickOneOf(this.appeals)}!</h2>`;
     }
     async parseLinks(text) {
@@ -152,6 +152,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     willUpdate(_changedProperties) {
         if (_changedProperties.has("day")) {
             if (this.day) {
+                this.bible.reference = this.day.reading;
                 if (this.day.questions) {
                     this.parseLinks(this.parseMarkdown(this.day.questions))
                         .then(content => this.activateInnerReferences(content))
@@ -203,7 +204,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     ${this.day.reading ? html `<p>Сьогодні читаємо:</p>
     <bible-excerpt
       defaultTranslation="${this.defaultTranslation}"
-      reference="${this.day.reading}" 
+      .bible=${{ excerpts: this.bible.excerpts, reference: this.bible.reference }} 
       .hilightVerses="${this.hilightVerses}"></bible-excerpt>
     ${unsafeHTML(this.questions)}
     ${unsafeHTML(this.exposition)}` : nothing}`

@@ -1,5 +1,5 @@
 import { LitElement, PropertyValues } from 'lit';
-import { type BibleExcerptData } from '../../utils/bolls.js';
+import { type BibleExcerptData, type BollsBible } from '../../utils/bolls.js';
 export interface BibleExcerptsContent {
     reference: string;
     excerpts: BibleExcerptData[];
@@ -9,7 +9,7 @@ export declare class BibleExcerpt extends LitElement {
     bible: BibleExcerptsContent;
     hilightVerses: string;
     reference: string;
-    private bChapterVerse;
+    static renderChapterVerse(verse: BollsBible.ChapterVerse, hilight?: boolean): import("lit-html").TemplateResult<1>;
     protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void;
     render(): import("lit-html").TemplateResult<1> | undefined;
     static styles: import("lit").CSSResult[];

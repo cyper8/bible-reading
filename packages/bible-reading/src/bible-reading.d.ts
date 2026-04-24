@@ -31,8 +31,8 @@ export declare class BibleReading extends LitElement {
     private activateInnerReferences;
     static get greetings(): string[];
     static get appeals(): string[];
-    static greeting(date: Date): import("lit-html").TemplateResult<1>;
-    private greeting;
+    static greeting(hours24: number): import("lit-html").TemplateResult<1>;
+    greeting: import("lit-html").TemplateResult<1>;
     parseLinks(text: string): Promise<string>;
     parseMarkdown(content: string): string;
     protected updated(_changedProperties: PropertyValues<BibleReading>): void;

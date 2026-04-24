@@ -139,13 +139,12 @@ export class BibleReading extends LitElement {
     ]
   }
 
-  static greeting(date: Date) {
-    let hours = date.getHours(),
-      time = hours > 15 ? "вечір" : hours > 10 ? "день" : "ранок";
+  static greeting(hours24: number) {
+    let time = hours24 > 15 ? "вечір" : hours24 > 10 ? "день" : "ранок";
     return html`<h2>${pickOneOf(this.greetings).replace("ранок", time)}, ${pickOneOf(this.appeals)}!</h2>`
   }
 
-  private greeting = BibleReading.greeting(new Date());
+  greeting = BibleReading.greeting((new Date()).getHours());
 
   async parseLinks(text: string): Promise<string> {
     const inlineRef = /\[[^\[\]]+\]/gm;
@@ -181,6 +180,7 @@ export class BibleReading extends LitElement {
   protected willUpdate(_changedProperties: PropertyValues<BibleReading>): void {
     if (_changedProperties.has("day")) {
       if (this.day) {
+        this.bible.reference = this.day.reading;
         if (this.day.questions) {
           this.parseLinks(this.parseMarkdown(this.day.questions))
             .then(content => this.activateInnerReferences(content))
@@ -230,7 +230,7 @@ export class BibleReading extends LitElement {
     ${this.day.reading ? html`<p>Сьогодні читаємо:</p>
     <bible-excerpt
       defaultTranslation="${this.defaultTranslation}"
-      reference="${this.day.reading}" 
+      .bible=${{ excerpts: this.bible.excerpts, reference: this.bible.reference }} 
       .hilightVerses="${this.hilightVerses}"></bible-excerpt>
     ${unsafeHTML(this.questions)}
     ${unsafeHTML(this.exposition)}` : nothing}`

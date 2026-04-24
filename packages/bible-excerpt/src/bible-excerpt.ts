@@ -18,7 +18,7 @@ export class BibleExcerpt extends LitElement {
   @property({ type: String, attribute: 'hilight-vrsees' }) hilightVerses: string = '';
   @property({ type: String }) reference: string = '';
 
-  private bChapterVerse(verse: BollsBible.ChapterVerse, hilight = false) {
+  static renderChapterVerse(verse: BollsBible.ChapterVerse, hilight = false) {
     return html`<input type=radio name="note" id="verse${verse.verse}" class="note" />
     <label for="verse${verse.verse}">
       <p 
@@ -51,7 +51,7 @@ export class BibleExcerpt extends LitElement {
       return html`<section class="bible">
         ${this.bible.excerpts.map(excerpt => html`<div class="excerpt">
           <h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>
-        ${excerpt.versesData.map(v => this.bChapterVerse(v, hilighted.includes(v?.verse)))}
+        ${excerpt.versesData.map(v => BibleExcerpt.renderChapterVerse(v, hilighted.includes(v?.verse)))}
         </div>`)}
       </section>`;
     }
