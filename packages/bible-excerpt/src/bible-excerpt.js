@@ -135,6 +135,9 @@ __decorate([
     property({ type: String })
 ], BibleExcerpt.prototype, "defaultTranslation", void 0);
 __decorate([
+    property({ type: Object })
+], BibleExcerpt.prototype, "bible", void 0);
+__decorate([
     property({ type: String, attribute: 'hilight-vrsees' })
 ], BibleExcerpt.prototype, "hilightVerses", void 0);
 __decorate([

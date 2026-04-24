@@ -2,14 +2,19 @@ import { LitElement, PropertyValues, css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { type BollsBible } from '../../utils/bolls.js';
+import { type BibleExcerptData, type BollsBible } from '../../utils/bolls.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
 import { BibleController } from './BibleController.js';
+
+export interface BibleExcerptsContent {
+  reference: string
+  excerpts: BibleExcerptData[]
+}
 
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
   @property({ type: String }) defaultTranslation: string = 'UBIO';
-  bible = new BibleController(this, this.defaultTranslation);
+  @property({ type: Object }) bible: BibleExcerptsContent = new BibleController(this, this.defaultTranslation);
   @property({ type: String, attribute: 'hilight-vrsees' }) hilightVerses: string = '';
   @property({ type: String }) reference: string = '';
 
