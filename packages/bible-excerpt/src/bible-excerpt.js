@@ -6,11 +6,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 var BibleExcerpt_1;
 import { LitElement, css, html, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
 import { BibleController } from './BibleController.js';
+import "../../simple-aided-input/index.js";
+import linkIcon from "./link-chain-svgrepo-com.svg?raw";
+import editIcon from "./edit-svgrepo-com.svg?raw";
 let BibleExcerpt = class BibleExcerpt extends LitElement {
     constructor() {
         super(...arguments);
@@ -18,8 +22,59 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
         this.bible = new BibleController(this, this.defaultTranslation);
         this.hilightVerses = '';
         this.reference = '';
+        this.editable = this.bible instanceof BibleController;
+        this.edit = false;
+        this.inputSuggestions = [];
     }
     static { BibleExcerpt_1 = this; }
+    async getSuggestions(inputRef) {
+        if (!(this.bible instanceof BibleController))
+            return [];
+        const translInputTest = /\([A-Z]*$/;
+        let library = await this.bible.remote.library;
+        let translationInput = inputRef.match(translInputTest);
+        if (translationInput) {
+            return library.all
+                .map(edition => (`(${edition.short_name})`))
+                .filter(edName => translationInput[0].length ? edName.includes(translationInput[0]) : true)
+                .map(item => ({
+                name: item,
+                value: item.replace(translationInput[0], '')
+            }));
+        }
+        else {
+            let refs = BibleController.parseReferenses(inputRef, {
+                translation: this.defaultTranslation,
+                bookName: 'unknown',
+            });
+            let ref = refs[refs.length ? refs.length - 1 : 0];
+            let books = library
+                .getTranslations([ref.translation || this.defaultTranslation])
+                .all.map(edition => edition.books.map(book => book.name)).flat();
+            let bookQuery = ref.bookName;
+            if (bookQuery !== 'unknown') {
+                return books
+                    .filter(bname => bname.includes(bookQuery))
+                    .map(bname => ({
+                    name: bname,
+                    value: bname.replace(bookQuery, '')
+                }));
+            }
+            else {
+                return books
+                    .map(item => ({
+                    name: item,
+                    value: item
+                }));
+            }
+        }
+    }
+    renderExcerpt(excerpt, hilighted) {
+        return html `<div class="excerpt">
+      <h3>${excerpt.reference}${"url" in excerpt ? BibleExcerpt_1.renderLink(excerpt.url) : nothing}</h3>
+      ${"versesData" in excerpt ? excerpt.versesData.map(v => BibleExcerpt_1.renderChapterVerse(v, hilighted.includes(v?.verse))) : nothing}
+    </div>`;
+    }
     static renderChapterVerse(verse, hilight = false) {
         return html `<input type=radio name="note" id="verse${verse.verse}" class="note" />
     <label for="verse${verse.verse}">
@@ -40,19 +95,46 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
       </p>
     </label>`;
     }
+    static renderLink(url) {
+        return html `<a class="icon" href="${encodeURI(url)}">${unsafeSVG(linkIcon)}</a>`;
+    }
+    renderEdit() {
+        return html `<a class="icon" 
+    @click=${() => {
+            this.edit = true;
+        }}>${unsafeSVG(editIcon)}</a>`;
+    }
     willUpdate(_changedProperties) {
         if (_changedProperties.has("reference")) {
             this.bible.reference = this.reference;
+        }
+        if (_changedProperties.has("bible")) {
+            this.editable = this.bible instanceof BibleController;
         }
     }
     render() {
         if (this.bible.excerpts.length) {
             let hilighted = this.hilightVerses ? spreadNumbers(this.hilightVerses) : [];
             return html `<section class="bible">
-        ${this.bible.excerpts.map(excerpt => html `<div class="excerpt">
-          <h3><a class="bible" href="${excerpt.url}">${excerpt.reference}</a></h3>
-        ${excerpt.versesData.map(v => BibleExcerpt_1.renderChapterVerse(v, hilighted.includes(v?.verse)))}
-        </div>`)}
+        ${this.edit
+                ? html `<simple-aided-input mode="append"
+          value="${this.bible.reference}"
+          .suggestions=${this.inputSuggestions}
+          @aided-input=${(e) => {
+                    this.getSuggestions(e.detail).then(suggestions => {
+                        this.inputSuggestions = suggestions;
+                    });
+                }}
+          @value-changed=${(e) => {
+                    this.edit = false;
+                    this.bible.reference = e.detail;
+                }}
+        @value-unchanged=${(_e) => {
+                    this.edit = false;
+                }}
+          ></simple-aided-input>`
+                : html `${this.editable ? this.renderEdit() : nothing}
+            ${this.bible.excerpts.map((excerpt) => this.renderExcerpt(excerpt, hilighted))}`}
       </section>`;
         }
     }
@@ -107,6 +189,14 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
   .verse:hover {
     background-color: var(--_this-hilight);
   }
+  .icon svg {
+    width: 1em;
+    height: 1em;
+
+    path {
+      stroke: var(--_this-color);
+    }
+  }
   span.comment {
     display: none;
     background: var(--_this-color);
@@ -130,7 +220,10 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
   a:hover {
     color: var(--_this-dark-accent)
   }
-
+  #suggestion-list {
+    max-height: 50em;
+    overflow: scroll
+  }
   `]; }
 };
 __decorate([
@@ -145,6 +238,15 @@ __decorate([
 __decorate([
     property({ type: String })
 ], BibleExcerpt.prototype, "reference", void 0);
+__decorate([
+    property({ type: Boolean })
+], BibleExcerpt.prototype, "editable", void 0);
+__decorate([
+    state()
+], BibleExcerpt.prototype, "edit", void 0);
+__decorate([
+    state()
+], BibleExcerpt.prototype, "inputSuggestions", void 0);
 BibleExcerpt = BibleExcerpt_1 = __decorate([
     customElement('bible-excerpt')
 ], BibleExcerpt);

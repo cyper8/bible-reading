@@ -1,6 +1,6 @@
 {
-  "name": "@cyper8/bible-excerpt",
-  "version": "0.1.0",
+  "name": "@cyper8/simple-aided-input",
+  "version": "0.0.1",
   "type": "module",
   "main": "./index.js",
   "exports": {
@@ -11,9 +11,6 @@
   },
   "scripts": {
     "build": "tsc -b"
-  },
-  "dependencies": {
-    "@cyper8/simple-aided-input": "*"
   },
   "peerDependencies": {
     "lit": "^3.2.1"

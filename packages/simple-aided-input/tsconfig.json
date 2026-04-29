@@ -12,9 +12,6 @@
   "references": [
     {
       "path": "../utils/tsconfig.json"
-    },
-    {
-      "path": "../simple-aided-input/tsconfig.json"
     }
   ]
 }

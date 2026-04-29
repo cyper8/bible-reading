@@ -117,7 +117,10 @@ export class BibleController implements ReactiveController {
   set reference(ref: string) {
     this.getExcerpts(ref)
       .then(excerpts => this.excerpts = excerpts)
-      .finally(() => { this.host.requestUpdate() })
+      .finally(() => {
+        this._reference = this.excerpts.map(ec => ec.reference).join(", ") || "";
+        this.host.requestUpdate()
+      })
   }
 
   excerpts: BibleExcerptData[] = [];

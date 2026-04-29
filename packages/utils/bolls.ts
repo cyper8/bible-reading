@@ -1,3 +1,5 @@
+import { BibleLibrary } from "./BibleLibrary.js";
+
 export namespace BollsBible {
 
   export declare interface Verse {
@@ -71,7 +73,7 @@ export class BollsBibleService {
   static API_ROOT = 'https://bolls.life';
   static TRANSLATIONSINDEX_URL = this.API_ROOT + '/static/bolls/app/views/languages.json';
   static TRANSLATIONSBOOKS_URL = this.API_ROOT + '/static/bolls/app/views/translations_books.json';
-  static allEditions: Promise<BibleEdition[]> = this.getLibrary();
+  static allEditions: Promise<BibleEdition[]> = this.getEditions();
 
   static getBollsHomepage(translation: BollsBible.Translation['short_name']): string {
     return `${this.API_ROOT}/${translation}/`
@@ -103,7 +105,7 @@ export class BollsBibleService {
     }
   }
 
-  static async getLibrary(): Promise<BibleEdition[]> {
+  static async getEditions(): Promise<BibleEdition[]> {
     const booksIndex: BollsBible.BooksIndex = await BollsBibleService.fetchTranslationsBooks();
     var translationsIndex = await BollsBibleService.fetchTranslationsIndex();
 
@@ -153,104 +155,30 @@ export class BollsBibleService {
   get selectedLanguages() { return this._selectedLanguages }
   private _selectedTranslations: string[] = [];
   get selectedTranslations() { return this._selectedTranslations }
-  library: Promise<BibleEdition[]>;
+  library: Promise<BibleLibrary>;
 
   constructor() {
-    this.library = BollsBibleService.allEditions.then(editions => {
-      this._selectedLanguages = editions.map(edition => edition.language);
-      this._selectedTranslations = editions.map(edition => edition.short_name);
-      return editions
+    this.library = BollsBibleService.allEditions.then(editions => new BibleLibrary(editions))
+  }
+
+  selectLanguages(languages: string[]): Promise<BibleLibrary> {
+    return this.library.then(library => {
+      let lib = library.setLanguages(languages);
+      this._selectedLanguages = lib.selectedLanguages;
+      return lib
     })
   }
 
-  selectLanguages(languages: string[]): Promise<BibleEdition[]> {
-    return this.library = BollsBibleService.allEditions.then(editions => {
-      this._selectedLanguages = languages;
-      return editions.filter(ln => languages.some(lang => ln.language.includes(lang)))
-    })
-  }
-
-  selectTranslations(translations: BollsBible.Translation['short_name'][]): Promise<BibleEdition[]> {
-    return this.library = BollsBibleService.allEditions.then(editions => {
-      this._selectedTranslations = translations;
-      return editions
-        .filter(edition => translations.includes(edition.short_name))
+  selectTranslations(translations: BollsBible.Translation['short_name'][]): Promise<BibleLibrary> {
+    return this.library.then(editions => {
+      let lib = editions.setTranslations(translations);
+      this._selectedTranslations = lib.selectedTranslations;
+      return lib
     })
   }
 
   async bookSearch(query: string): Promise<BookSearchResult[]> {
-    //const MIN_MATCH_LENGTH = 1;
-    const MAX_SKIPS = 1;
-    const MIN_MATCHES = 3;
-    let selectedBooks: BookSearchResult[] = (await this.library)
-      .map(e => e.books.map(b => {
-        return {
-          ...b,
-          translation: e.short_name,
-          searchWeight: 0
-        } as BookSearchResult
-      })).flat();
-    let qwords: string[] = query.split(" ");
-    return selectedBooks.reduce<BookSearchResult[]>((matches: BookSearchResult[], book: BookSearchResult) => {
-      let name = book.name;//.toWellFormed?.() || book.name;
-      let matchWeight = 0;
-      let match = qwords.filter((qword) => {
-        if (/[0-9]/.test(qword)) {    // numbers from qwords matched separately
-          let numtest = qword.replace(/[^0-9]/g, "");
-          if (RegExp(numtest).test(name)) {
-            matchWeight += 2;
-            return true;
-          } else
-            return false;
-        } else {
-          let matchLength = 0;
-          var test = "";
-          var skipcount = 0;
-          var matchcount = 0;
-          var len = 0;
-          const compileExpr = (q: string) => new RegExp(`(\\s|^)${q.replace(/(?<=\s|^)(ів|йо|іо)/ig, "(ів|іо|йо)") // popular variations in ukrainian translations of John's book naming
-            }${len == qword.length - 1 ? '(\\s|$)' : ''}`, "igu");
-          var expr;
-          for (; len < qword.length; len++) {
-            test += qword[len];
-            expr = compileExpr(test);
-            if (!(expr.test(name))) {
-              if (skipcount < MAX_SKIPS && matchcount >= MIN_MATCHES) {
-                skipcount++;
-                if (skipcount == MAX_SKIPS)
-                  matchcount = 0;
-                test = test.slice(0, len) + ".";
-                expr = compileExpr(test);
-                if (!(expr.test(name))) {
-                  break;
-                }
-              } else
-                break;
-            } else {
-              skipcount = 0;
-              matchcount++;
-            }
-            matchLength = len + 1;
-            if (len == qword.length - 1)
-              matchLength += 1;
-          }
-          if (matchLength) {
-            matchWeight += matchLength;
-            return true;
-          } else
-            return false;
-        }
-      });
-      if (match.length && matchWeight) {
-        let searchWeight = Math.round((matchWeight / name.length) * 100);
-        if (searchWeight > 30) {
-          book.searchWeight = searchWeight;
-          matches.push(book);
-        }
-      }
-      return matches
-    }, [])
-      .sort((b1, b2) => b2.searchWeight - b1.searchWeight)
+    return (await this.library).bookSearch(query)
   }
 
   async getBook(bookName: string, translation?: BollsBible.Translation['short_name']): Promise<BollsBible.Book> {
@@ -273,3 +201,5 @@ export class BollsBibleService {
     throw new Error(`Cannot find the book. Check the book's name spelling if it exists in selected Bible's edition(s).`);
   }
 }
+
+

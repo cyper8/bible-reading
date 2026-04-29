@@ -94,7 +94,10 @@ export class BibleController {
     set reference(ref) {
         this.getExcerpts(ref)
             .then(excerpts => this.excerpts = excerpts)
-            .finally(() => { this.host.requestUpdate(); });
+            .finally(() => {
+            this._reference = this.excerpts.map(ec => ec.reference).join(", ") || "";
+            this.host.requestUpdate();
+        });
     }
     constructor(host, defaultTranslation, languages, translations) {
         this.remote = new BollsBibleService();
