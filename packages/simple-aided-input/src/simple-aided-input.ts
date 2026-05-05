@@ -35,7 +35,7 @@ export class SimpleAidedInput extends LitElement {
     }));
   }
 
-  private handleKeys = (e: KeyboardEvent & { target: HTMLLabelElement }) => {
+  private handleKeys = (e: KeyboardEvent & { target: HTMLInputElement }) => {
     switch (e.key) {
       case "Enter":
         if (this.suggestions.length) this.takeSuggestion(this.selected);
@@ -96,10 +96,11 @@ export class SimpleAidedInput extends LitElement {
   // }
 
   protected render(): unknown {
-    return html`<label for="ref-input" @keydown=${this.handleKeys}>
+    return html`<label for="ref-input">
       <input id="ref-input" type=text autocomplete="off"
         .value=${this.input} 
         @input=${this.handleInput} 
+        @keydown=${this.handleKeys}
       \>
       <div id="suggestions-list" class="input-suggestions">${this.suggestions
         .map((suggestion: InputSuggestion, index: number) =>
@@ -115,12 +116,48 @@ export class SimpleAidedInput extends LitElement {
     </label>`
   }
 
+  /**
+   * --aided-input-text-color
+   * --aided-input-background-color
+   * --aided-input-suggestions-background
+   * --aided-input-suggestions-text
+   * --aided-input-suggestions-hover-background
+   * --aided-input-suggestions-hover-text
+   * --aided-input-suggestions-selected-background
+   * --aided-input-suggestions-selected-text
+   */
+
   static styles = [css`
+    :host{
+      --aided-input-text-color: #eee;
+      --aided-input-suggestions-text: #eee;
+      --aided-input-suggestions-hover-text: #eeeeee;
+      --aided-input-suggestions-selected-background: #ddd;
+      --aided-input-background-color: #222;
+      --aided-input-suggestions-background: #222; 
+      --aided-input-suggestions-hover-background: #444;
+      --aided-input-suggestions-selected-text: #111;
+    }
+    @media (prefers-color-scheme: light) {
+    :host {
+      --aided-input-background-color: #eee;
+      --aided-input-suggestions-background:  #eee;
+      --aided-input-suggestions-hover-background: #eeeeee;
+      --aided-input-suggestions-selected-background: #ddd;
+      --aided-input-text-color: #222;
+      --aided-input-suggestions-text: #222; 
+      --aided-input-suggestions-hover-text: #444
+      --aided-input-suggestions-selected-text: #111;
+    }
+  }
     #suggestions-list:not(:has(*)) {
       display: none
     }
     .suggested-item[selected] {
       outline: solid 1px white;
+    }
+    .suggested-item:hover {
+      background-color: filter
     }
   `];
 
