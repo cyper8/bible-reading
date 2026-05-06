@@ -27,6 +27,7 @@ let SimpleAidedInput = class SimpleAidedInput extends LitElement {
         this.handleKeys = (e) => {
             switch (e.key) {
                 case "Enter":
+                    e.preventDefault();
                     if (this.suggestions.length)
                         this.takeSuggestion(this.selected);
                     else
@@ -38,6 +39,7 @@ let SimpleAidedInput = class SimpleAidedInput extends LitElement {
                         }));
                     break;
                 case "Escape":
+                    e.preventDefault();
                     if (this.suggestions.length)
                         this.suggestions = [];
                     else
@@ -49,11 +51,13 @@ let SimpleAidedInput = class SimpleAidedInput extends LitElement {
                         }));
                     break;
                 case "ArrowUp":
+                    e.preventDefault();
                     this.selected = this.suggestions.length
                         ? ((this.suggestions.length + this.selected - 1) % this.suggestions.length)
                         : -1;
                     break;
                 case "ArrowDown":
+                    e.preventDefault();
                     this.selected = this.suggestions.length
                         ? (this.selected + 1) % this.suggestions.length
                         : -1;
@@ -103,52 +107,62 @@ let SimpleAidedInput = class SimpleAidedInput extends LitElement {
     }
     static { this.styles = [css `
     :host{
-      --aided-input-text-color: #eee;
-      --aided-input-suggestions-text: #eee;
-      --aided-input-suggestions-hover-text: #eeeeee;
-      --aided-input-suggestions-selected-background: #ddd;
-      --aided-input-background-color: #222;
-      --aided-input-suggestions-background: #222; 
-      --aided-input-suggestions-hover-background: #444;
-      --aided-input-suggestions-selected-text: #111;
+      --_text-color: var(--aided-input-text-color, #eee);
+      --_suggestions-text: var(--aided-input-suggestions-text, --_text-color);
+      --_suggestions-hover-text: var(--aided-input-suggestions-hover-text, --_text-color);
+      --_suggestions-selected-background: var(--aided-input-suggestions-selected-background, #ddd);
+      --_background-color: var(--aided-input-background-color, #222);
+      --_suggestions-background: var(--aided-input-suggestions-background, --_background-color); 
+      --_suggestions-hover-background: var(--aided-input-suggestions-hover-background, #444);
+      --_suggestions-selected-text: var(--aided-input-suggestions-selected-text, #111);
 
-      color: var(--aided-input-text-color);
-      background-color: var(--aided-input-background-color);
+      color: var(--_text-color);
+      background-color: var(--_background-color);
     }
     @media (prefers-color-scheme: light) {
       :host {
-        --aided-input-background-color: #eee;
-        --aided-input-suggestions-background:  #eee;
-        --aided-input-suggestions-hover-background: #eeeeee;
-        --aided-input-suggestions-selected-background: #ddd;
-        --aided-input-text-color: #222;
-        --aided-input-suggestions-text: #222; 
-        --aided-input-suggestions-hover-text: #444
-        --aided-input-suggestions-selected-text: #111;
+        --_text-color: var(--aided-input-background-color, #222);
+        --_suggestions-text: var(--aided-input-suggestions-background, --_text-color);
+        --_suggestions-hover-text: var(--aided-input-suggestions-hover-background, #444);
+        --_suggestions-selected-background: var(--aided-input-suggestions-selected-background, #111);
+        --_background-color: var(--aided-input-text-color, #eee);
+        --_suggestions-background: var(--aided-input-suggestions-text, --_background-color); 
+        --_suggestions-hover-background: var(--aided-input-suggestions-hover-text, --_background-color);
+        --_suggestions-selected-text: var(--aided-input-suggestions-selected-text, #ddd);
       }
     }
     input {
-      color: var(--aided-input-text-color);
+      font-size: inherit;
+      outline: none;
+      color: var(--_text-color);
       background: none;
       border-top: none;
       border-left: none;
-      border-bottom: solid 1px var(--aided-input-text-color);
+      border-bottom: solid 1px var(--_text-color);
       border-right: none;
+    }
+    #suggestions-list {
+      background-color: var(--_suggestions-background);
+      padding: 0 1em 1em 1em;
+      min-width: 50%;
+      position: absolute;
+      max-height: 50vh;
+      overflow: auto scroll;
     }
     #suggestions-list:not(:has(*)) {
       display: none
     }
     .suggested-item{
-      color: var(--aided-input-suggestions-text);
-      background-color: var(--aided-input-suggestions-background);
+      color: var(--_suggestions-text);
+      line-height: 1.5em;
     }
     .suggested-item[selected] {
-      color: var(--aided-input-suggestions-selected-text);
-      background-color: var(--aided-input-suggestions-selected-background);
+      color: var(--_suggestions-selected-text);
+      background-color: var(--_suggestions-selected-background);
     }
     .suggested-item:hover {
-      color: var(--aided-input-suggestions-hover-text);
-      background-color: var(--aided-input-suggestions-hover-background);
+      color: var(--_suggestions-hover-text);
+      background-color: var(--_suggestions-hover-background);
     }
   `]; }
 };

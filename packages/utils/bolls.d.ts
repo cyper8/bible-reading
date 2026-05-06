@@ -29,7 +29,7 @@ export declare namespace BollsBible {
         bookid: number;
         chronorder: number;
         name: string;
-        chapter: number;
+        chapters: number;
     }
     type BooksIndex = {
         [edition in Translation["short_name"]]: Book[];

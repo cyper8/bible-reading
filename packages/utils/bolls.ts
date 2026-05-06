@@ -36,7 +36,7 @@ export namespace BollsBible {
     bookid: number;
     chronorder: number;
     name: string;
-    chapter: number;
+    chapters: number;
   }
 
   export declare type BooksIndex = {

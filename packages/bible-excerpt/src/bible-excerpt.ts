@@ -48,17 +48,27 @@ export class BibleExcerpt extends LitElement {
       let ref = refs[refs.length ? refs.length - 1 : 0];
       let books = library
         .getTranslations([ref.translation || this.defaultTranslation])
-        .all.map(edition => edition.books.map(book => book.name)).flat();
+        .all.map(edition => edition.books).flat();
       let bookQuery = ref.bookName;
       if (bookQuery !== 'unknown') {
-        return books
-          .filter(bname => bname.includes(bookQuery))
-          .map(bname => ({
-            name: bname,
-            value: bname.replace(bookQuery, '')
-          }))
+        if (ref.chapter) {
+          return [];
+        } else {
+          let searchbooks = books.filter(book => book.name.includes(bookQuery));
+          if (inputRef.endsWith(searchbooks[0].name + ' ')) {
+            return spreadNumbers(`1-${searchbooks[0].chapters}`).map(num => ({
+              name: `${num}`,
+              value: `${num}`
+            }))
+          } else {
+            return searchbooks.map(book => ({
+              name: book.name,
+              value: book.name.replace(bookQuery, '')
+            }))
+          }
+        }
       } else {
-        return books
+        return books.map(book => book.name)
           .map(item => ({
             name: item,
             value: item
@@ -158,6 +168,15 @@ export class BibleExcerpt extends LitElement {
     --_this-hilight: var(--bible-excerpt-hilight, rgba(200, 200, 200, 0.5));
     --_this-accent: var(--bible-excerpt-accent, #59f);
     --_this-dark-accent: var(--bible-excerpt-dark-accent, #46e);
+
+    --aided-input-text-color: var(--_this-color);
+    --aided-input-background-color: var(--_this-background);
+    --aided-input-suggestions-background: var(--_this-background);
+    --aided-input-suggestions-text: var(--_this-color);
+    --aided-input-suggestions-hover-background: var(--_this-hilight);
+    --aided-input-suggestions-hover-text: var(--_this-color);
+    --aided-input-suggestions-selected-background: var(--_this-hilight-accent);
+    --aided-input-suggestions-selected-text: var(--_this-color);
 
     box-sizing: border-box;
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
