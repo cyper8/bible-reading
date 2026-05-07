@@ -88,6 +88,20 @@ let SimpleAidedInput = class SimpleAidedInput extends LitElement {
         if (_changedProperties.has("value"))
             this.input = this.value;
     }
+    updated(changedProperties) {
+        if (changedProperties.has("selected")) {
+            let selectedItem = this.shadowRoot?.querySelector(".suggested-item[selected]");
+            if (selectedItem) {
+                let parent = selectedItem.parentElement;
+                if (parent) {
+                    if (selectedItem.offsetTop > (parent.scrollTop + parent.clientHeight)
+                        || selectedItem.offsetTop < parent.scrollTop) {
+                        parent.scrollTo({ top: selectedItem.offsetTop - 20 });
+                    }
+                }
+            }
+        }
+    }
     render() {
         return html `<label for="ref-input">
       <input id="ref-input" type=text autocomplete="off"

@@ -46,6 +46,7 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
             let refs = BibleController.parseReferenses(inputRef, {
                 translation: this.defaultTranslation,
                 bookName: 'unknown',
+                chapter: 99
             });
             let ref = refs[refs.length ? refs.length - 1 : 0];
             let books = library
@@ -53,7 +54,7 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
                 .all.map(edition => edition.books).flat();
             let bookQuery = ref.bookName;
             if (bookQuery !== 'unknown') {
-                if (ref.chapter) {
+                if (ref.chapter != 99) {
                     return [];
                 }
                 else {
@@ -141,12 +142,12 @@ let BibleExcerpt = class BibleExcerpt extends LitElement {
                     this.edit = false;
                     this.bible.reference = e.detail;
                 }}
-        @value-unchanged=${(_e) => {
+          @value-unchanged=${(_e) => {
                     this.edit = false;
                 }}
           ></simple-aided-input>`
-                : html `${this.editable ? this.renderEdit() : nothing}
-            ${this.bible.excerpts.map((excerpt) => this.renderExcerpt(excerpt, hilighted))}`}
+                : html `${this.editable ? this.renderEdit() : nothing}`}
+        ${this.bible.excerpts.map((excerpt) => this.renderExcerpt(excerpt, hilighted))}
       </section>`;
         }
     }

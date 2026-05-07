@@ -22,6 +22,7 @@ export declare class SimpleAidedInput extends LitElement {
     private handleKeys;
     private takeSuggestion;
     protected willUpdate(_changedProperties: PropertyValues<SimpleAidedInput>): void;
+    protected updated(changedProperties: PropertyValues<SimpleAidedInput>): void;
     protected render(): unknown;
     static styles: import("lit").CSSResult[];
 }

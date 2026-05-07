@@ -35,7 +35,7 @@ export class BibleLibrary {
     return this;
   }
 
-  async bookSearch(query: string): Promise<BookSearchResult[]> {
+  bookSearch(query: string): BookSearchResult[] {
     //const MIN_MATCH_LENGTH = 1;
     const MAX_SKIPS = 1;
     const MIN_MATCHES = 3;

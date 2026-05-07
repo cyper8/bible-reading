@@ -11,6 +11,6 @@ export declare class BibleLibrary {
     setLanguages(languages: string[]): this;
     getTranslations(translations: BollsBible.Translation['short_name'][]): BibleLibrary;
     setTranslations(translations: BollsBible.Translation['short_name'][]): this;
-    bookSearch(query: string): Promise<BookSearchResult[]>;
+    bookSearch(query: string): BookSearchResult[];
 }
 //# sourceMappingURL=BibleLibrary.d.ts.map

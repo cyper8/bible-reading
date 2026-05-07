@@ -93,11 +93,20 @@ export class SimpleAidedInput extends LitElement {
     if (_changedProperties.has("value")) this.input = this.value;
   }
 
-  // protected updated(changedProperties: PropertyValues<SimpleAidedInput>): void {
-  //   if (changedProperties.has("value")) {
-  //     this.input = this.value;
-  //   }
-  // }
+  protected updated(changedProperties: PropertyValues<SimpleAidedInput>): void {
+    if (changedProperties.has("selected")) {
+      let selectedItem = this.shadowRoot?.querySelector<HTMLParagraphElement>(".suggested-item[selected]");
+      if (selectedItem) {
+        let parent = selectedItem.parentElement;
+        if (parent) {
+          if (selectedItem.offsetTop > (parent.scrollTop + parent.clientHeight)
+            || selectedItem.offsetTop < parent.scrollTop) {
+            parent.scrollTo({ top: selectedItem.offsetTop - 20 })
+          }
+        }
+      }
+    }
+  }
 
   protected render(): unknown {
     return html`<label for="ref-input">

@@ -26,7 +26,7 @@ export class BibleLibrary {
         this._selectedTranslations = translations;
         return this;
     }
-    async bookSearch(query) {
+    bookSearch(query) {
         const MAX_SKIPS = 1;
         const MIN_MATCHES = 3;
         let selectedBooks = this._index.map(e => e.books.map(b => {

@@ -64,6 +64,16 @@ export declare class BollsBibleService {
     static getBollsHomepage(translation: BollsBible.Translation['short_name']): string;
     static fetchTranslationsIndex(): Promise<BollsBible.L10n[]>;
     static fetchTranslationsBooks(): Promise<BollsBible.BooksIndex>;
+    static compileEditions(booksIndex: BollsBible.BooksIndex, translationsIndex: BollsBible.L10n[]): {
+        language: string;
+        books: BollsBible.Book[];
+        short_name: string;
+        full_name: string;
+        commentaries?: boolean;
+        updated: number;
+        info?: string;
+        dir?: "rtl" | "ltr";
+    }[];
     static getEditions(): Promise<BibleEdition[]>;
     static fetchTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]>;
     static fetchChapter(translation: string, book: number, chapter: number): Promise<BollsBible.ChapterVerse[]>;

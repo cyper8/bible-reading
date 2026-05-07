@@ -105,10 +105,7 @@ export class BollsBibleService {
     }
   }
 
-  static async getEditions(): Promise<BibleEdition[]> {
-    const booksIndex: BollsBible.BooksIndex = await BollsBibleService.fetchTranslationsBooks();
-    var translationsIndex = await BollsBibleService.fetchTranslationsIndex();
-
+  static compileEditions(booksIndex: BollsBible.BooksIndex, translationsIndex: BollsBible.L10n[]) {
     return translationsIndex
       .map(ln => ln.translations.map(tr => {
         return {
@@ -117,6 +114,12 @@ export class BollsBibleService {
           books: booksIndex[tr.short_name]
         }
       })).flat();
+  }
+
+  static async getEditions(): Promise<BibleEdition[]> {
+    const booksIndex: BollsBible.BooksIndex = await BollsBibleService.fetchTranslationsBooks();
+    var translationsIndex = await BollsBibleService.fetchTranslationsIndex();
+    return this.compileEditions(booksIndex, translationsIndex);
   }
 
   static async fetchTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]> {

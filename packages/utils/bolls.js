@@ -34,9 +34,7 @@ export class BollsBibleService {
             return {};
         }
     }
-    static async getEditions() {
-        const booksIndex = await BollsBibleService.fetchTranslationsBooks();
-        var translationsIndex = await BollsBibleService.fetchTranslationsIndex();
+    static compileEditions(booksIndex, translationsIndex) {
         return translationsIndex
             .map(ln => ln.translations.map(tr => {
             return {
@@ -45,6 +43,11 @@ export class BollsBibleService {
                 books: booksIndex[tr.short_name]
             };
         })).flat();
+    }
+    static async getEditions() {
+        const booksIndex = await BollsBibleService.fetchTranslationsBooks();
+        var translationsIndex = await BollsBibleService.fetchTranslationsIndex();
+        return this.compileEditions(booksIndex, translationsIndex);
     }
     static async fetchTranslationBooks(translationShortName) {
         try {
