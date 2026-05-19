@@ -1,16 +1,17 @@
+import { quzzySearch } from "./quzzySearch.js";
 export class BibleLibrary {
-    get all() { return this._index; }
+    get allBooks() { return this._index; }
     get selectedLanguages() { return this._selectedLanguages; }
-    get selectedTranslations() { return this._selectedTranslations; }
+    get selectedEditions() { return this._selectedEditions; }
     constructor(editions) {
         this._index = [];
         this._selectedLanguages = [];
-        this._selectedTranslations = [];
+        this._selectedEditions = [];
         this._index = editions;
         this._selectedLanguages = editions.map(edition => edition.language);
-        this._selectedTranslations = editions.map(edition => edition.short_name);
+        this._selectedEditions = editions.map(edition => edition.short_name);
     }
-    getLanguages(languages) {
+    selectLanguages(languages) {
         return new BibleLibrary(this._index.filter(edition => languages.some(lang => edition.language.includes(lang))));
     }
     setLanguages(languages) {
@@ -18,17 +19,18 @@ export class BibleLibrary {
         this._selectedLanguages = languages;
         return this;
     }
-    getTranslations(translations) {
-        return new BibleLibrary(this._index.filter(edition => translations.includes(edition.short_name)));
+    selectEditions(editions) {
+        return new BibleLibrary(this._index.filter(edition => editions.includes(edition.short_name)));
     }
-    setTranslations(translations) {
-        this._index = this._index.filter(edition => translations.includes(edition.short_name));
-        this._selectedTranslations = translations;
+    setEditions(editions) {
+        this._index = this._index.filter(edition => editions.includes(edition.short_name));
+        this._selectedEditions = editions;
         return this;
     }
-    bookSearch(query) {
-        const MAX_SKIPS = 1;
-        const MIN_MATCHES = 3;
+    getEdition(shortName) {
+        return this.allBooks.find(ed => ed.short_name == shortName);
+    }
+    searchBookName(query, options) {
         let selectedBooks = this._index.map(e => e.books.map(b => {
             return {
                 ...b,
@@ -36,70 +38,39 @@ export class BibleLibrary {
                 searchWeight: 0
             };
         })).flat();
-        let qwords = query.split(" ");
-        return selectedBooks.reduce((matches, book) => {
-            let name = book.name;
-            let matchWeight = 0;
-            let match = qwords.filter((qword) => {
-                if (/[0-9]/.test(qword)) {
-                    let numtest = qword.replace(/[^0-9]/g, "");
-                    if (RegExp(numtest).test(name)) {
-                        matchWeight += 2;
-                        return true;
-                    }
-                    else
-                        return false;
-                }
-                else {
-                    let matchLength = 0;
-                    var test = "";
-                    var skipcount = 0;
-                    var matchcount = 0;
-                    var len = 0;
-                    const compileExpr = (q) => new RegExp(`(\\s|^)${q.replace(/(?<=\s|^)(ів|йо|іо)/ig, "(ів|іо|йо)")}${len == qword.length - 1 ? '(\\s|$)' : ''}`, "igu");
-                    var expr;
-                    for (; len < qword.length; len++) {
-                        test += qword[len];
-                        expr = compileExpr(test);
-                        if (!(expr.test(name))) {
-                            if (skipcount < MAX_SKIPS && matchcount >= MIN_MATCHES) {
-                                skipcount++;
-                                if (skipcount == MAX_SKIPS)
-                                    matchcount = 0;
-                                test = test.slice(0, len) + ".";
-                                expr = compileExpr(test);
-                                if (!(expr.test(name))) {
-                                    break;
-                                }
-                            }
-                            else
-                                break;
-                        }
-                        else {
-                            skipcount = 0;
-                            matchcount++;
-                        }
-                        matchLength = len + 1;
-                        if (len == qword.length - 1)
-                            matchLength += 1;
-                    }
-                    if (matchLength) {
-                        matchWeight += matchLength;
-                        return true;
-                    }
-                    else
-                        return false;
-                }
-            });
-            if (match.length && matchWeight) {
-                let searchWeight = Math.round((matchWeight / name.length) * 100);
-                if (searchWeight > 30) {
-                    book.searchWeight = searchWeight;
-                    matches.push(book);
-                }
+        return quzzySearch(query, ["name"], selectedBooks, options);
+    }
+    getBook(query, edition, options) {
+        if (typeof query == 'number') {
+            if (!edition)
+                throw new Error('You must provide translation short name to retrieve a book by id.');
+            else {
+                let book = this.getEdition(edition)?.books.find(book => book.bookid == query);
+                if (book)
+                    return book;
             }
-            return matches;
-        }, [])
-            .sort((b1, b2) => b2.searchWeight - b1.searchWeight);
+        }
+        else {
+            let bookNameSearchResult = this.searchBookName(query, options);
+            if (bookNameSearchResult.length) {
+                if (edition) {
+                    let result = bookNameSearchResult.filter(book => book.translation == edition);
+                    if (result.length)
+                        return result[0];
+                    else {
+                        let bookid = bookNameSearchResult[0].bookid;
+                        let books = (this.allBooks).find(ed => ed.short_name === edition)?.books;
+                        if (books?.length) {
+                            result = books.filter(b => b.bookid == bookid);
+                            if (result.length)
+                                return result[0];
+                        }
+                    }
+                }
+                else
+                    return bookNameSearchResult[0];
+            }
+        }
+        throw new Error(`Cannot find the book "${query}". Check the book's name spelling if it exists in selected Bible editions (${this.selectedEditions.join(',')}).`);
     }
 }

@@ -3,37 +3,46 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
-import { BibleReference, type BibleExcerptData, type BollsBible } from '../../utils/bolls.js';
+import { BibleReference, fetchChapter, getChapterUrl, getEditions, parseReferenses, type BibleExcerptData, type BollsBible } from '../../utils/bolls.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
-import { BibleController } from './BibleController.js';
 import { type InputSuggestion, type AidedInputEvent, ValueChangedEvent, ValueUnchangedEvent } from "../../simple-aided-input/index.js";
 import "../../simple-aided-input/index.js";
 
 import linkIcon from "./link-chain-svgrepo-com.svg?raw";
 import editIcon from "./edit-svgrepo-com.svg?raw";
+import { BibleLibrary } from '../../utils/BibleLibrary.js';
+import { quzzySearch } from '../../utils/quzzySearch.js';
 
-export interface BibleExcerptsContent {
-  reference: string
-  excerpts: (BibleExcerptData | BibleReference)[]
+export type ExcerptsChangeEvent = CustomEvent<BibleExcerptData[]> & {
+  type: 'excerpts-changed'
 }
 
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
   @property({ type: String }) defaultTranslation: string = 'UBIO';
-  @property({ type: Object }) bible: BibleExcerptsContent = new BibleController(this, this.defaultTranslation);
-  @property({ type: String, attribute: 'hilight-vrsees' }) hilightVerses: string = '';
+  @property({ type: Object }) library: BibleLibrary = new BibleLibrary([]);
+  @property({ type: String, attribute: 'hilight-verses' }) hilightVerses: string = '';
   @property({ type: String }) reference: string = '';
-  @property({ type: Boolean }) editable = this.bible instanceof BibleController;
+  @property({ type: Boolean }) editable: boolean = true;
+  @property({ type: Array }) excerpts: (BibleExcerptData | BibleReference)[] = [];
   @state() private edit: boolean = false;
   @state() private inputSuggestions: InputSuggestion[] = [];
 
-  private async getSuggestions(inputRef: string): Promise<InputSuggestion[]> {
-    if (!(this.bible instanceof BibleController)) return [];
+  constructor() {
+    super();
+    getEditions({ languages: ['Ukrainian'] })
+      .then(
+        editions => {
+          this.library = new BibleLibrary(editions);
+        }
+      )
+  }
+
+  private getSuggestions(inputRef: string, library: BibleLibrary): InputSuggestion[] {
     const translInputTest = /\([A-Z]*$/;
-    let library = await this.bible.remote.library;
     let translationInput = inputRef.match(translInputTest);
     if (translationInput) {
-      return library.all
+      return library.allBooks
         .map(edition => (`(${edition.short_name})`))
         .filter(edName => translationInput[0].length ? edName.includes(translationInput[0]) : true)
         .map(item => ({
@@ -41,32 +50,34 @@ export class BibleExcerpt extends LitElement {
           value: item.replace(translationInput[0], '')
         }));
     } else {
-      let refs = BibleController.parseReferenses(inputRef, {
+      let refs = parseReferenses(inputRef, {
         translation: this.defaultTranslation,
         bookName: 'unknown',
         chapter: 99
       });
       let ref = refs[refs.length ? refs.length - 1 : 0];
       let books = library
-        .getTranslations([ref.translation || this.defaultTranslation])
-        .all.map(edition => edition.books).flat();
+        .selectEditions([ref.translation || this.defaultTranslation])
+        .allBooks.map(edition => edition.books).flat();
       let bookQuery = ref.bookName;
       if (bookQuery !== 'unknown') {
         if (ref.chapter != 99) {
           return [];
         } else {
-          let searchbooks = books.filter(book => book.name.includes(bookQuery));
-          if (inputRef.endsWith(searchbooks[0].name + ' ')) {
-            return spreadNumbers(`1-${searchbooks[0].chapters}`).map(num => ({
-              name: `${num}`,
-              value: `${num}`
-            }))
-          } else {
-            return searchbooks.map(book => ({
-              name: book.name,
-              value: book.name.replace(bookQuery, '')
-            }))
-          }
+          let searchbooks = quzzySearch<BollsBible.Book>(bookQuery, ["name"], books); //books.filter(book => book.name.includes(bookQuery));
+          if (searchbooks.length) {
+            if (inputRef.endsWith(searchbooks[0].name + ' ')) {
+              return spreadNumbers(`1-${searchbooks[0].chapters}`).map(num => ({
+                name: `${num}`,
+                value: `${num}`
+              }))
+            } else {
+              return searchbooks.map(book => ({
+                name: book.name,
+                value: book.name.replace(bookQuery, '')
+              }))
+            }
+          } else return []
         }
       } else {
         return books.map(book => book.name)
@@ -76,6 +87,37 @@ export class BibleExcerpt extends LitElement {
           }))
       }
     }
+  }
+
+  async getExcerpts(refs: string): Promise<BibleExcerptData[]>
+  async getExcerpts(refs: BibleReference[]): Promise<BibleExcerptData[]>
+  async getExcerpts(refs: string | BibleReference[]): Promise<BibleExcerptData[]> {
+    let references: BibleReference[];
+    if (typeof refs == "string") {
+      references = parseReferenses(refs, { translation: this.defaultTranslation });
+    } else {
+      references = refs
+    }
+    return Promise.all(references.map(async ref => {
+      let book = this.library.getBook(ref.bookName, this.defaultTranslation, { wholeWords: true });
+      let translation = ref.translation || this.defaultTranslation;
+      let bookName = book.name;
+      let bookNum = book.bookid;
+      let chapter = ref.chapter;
+      var versesData = await fetchChapter(translation, bookNum, chapter);
+      if (ref.verses && ref.verses.length) {
+        versesData = versesData.filter(verse => ref.verses!.includes(verse.verse));
+      }
+      return {
+        ...ref,
+        translation,
+        reference: ref.reference + (ref.translation ? '' : ` (${translation})`),
+        bookName,
+        bookNum,
+        versesData,
+        url: getChapterUrl(translation, bookNum, ref.chapter, ref.verses?.length ? ref.verses[0] : undefined)
+      }
+    }))
   }
 
   renderExcerpt(excerpt: BibleExcerptData | BibleReference, hilighted: number[]) {
@@ -117,41 +159,47 @@ export class BibleExcerpt extends LitElement {
       }}>${unsafeSVG(editIcon)}</a>`;
   }
 
-  protected willUpdate(_changedProperties: PropertyValues<BibleExcerpt>): void {
-    if (_changedProperties.has("reference")) {
-      this.bible.reference = this.reference;
-    }
-    if (_changedProperties.has("bible")) {
-      this.editable = this.bible instanceof BibleController;
+  protected updated(_changedProperties: PropertyValues<BibleExcerpt>): void {
+    if (_changedProperties.has("reference") || _changedProperties.has("library")) {
+      if (this.reference)
+        this.getExcerpts(this.reference)
+          .then(excerpts => {
+            this.excerpts = excerpts;
+            if (this.edit) {
+              this.edit = false;
+              this.dispatchEvent(new CustomEvent("excerpts-changed", {
+                composed: true,
+                bubbles: true,
+                cancelable: true,
+                detail: this.excerpts
+              }) as ExcerptsChangeEvent)
+            }
+          });
+      else this.excerpts = [];
     }
   }
 
   render() {
-    if (this.bible.excerpts.length) {
-      let hilighted = this.hilightVerses ? spreadNumbers(this.hilightVerses) : [];
-      return html`<section class="bible">
-        ${this.edit
-          ? html`<simple-aided-input mode="append"
-          value="${this.bible.reference}"
+    let hilighted = this.hilightVerses ? spreadNumbers(this.hilightVerses) : [];
+    return html`<section class="bible">
+        ${this.editable && this.edit
+        ? html`<simple-aided-input mode="append"
+          value="${this.reference}"
           .suggestions=${this.inputSuggestions}
           @aided-input=${(e: AidedInputEvent) => {
-              this.getSuggestions(e.detail).then(suggestions => {
-                this.inputSuggestions = suggestions
-              })
-            }}
+            this.inputSuggestions = this.getSuggestions(e.detail, this.library);
+          }}
           @value-changed=${(e: ValueChangedEvent) => {
-              this.edit = false;
-              this.bible.reference = e.detail;
-            }}
+            this.reference = e.detail;
+          }}
           @value-unchanged=${(_e: ValueUnchangedEvent) => {
-              this.edit = false;
-            }}
+            this.edit = false;
+          }}
           ></simple-aided-input>`
-          : html`${this.editable ? this.renderEdit() : nothing}`
-        }
-        ${this.bible.excerpts.map((excerpt) => this.renderExcerpt(excerpt, hilighted))}
+        : html`${this.editable ? this.renderEdit() : nothing}`
+      }
+        ${this.excerpts.map((excerpt) => this.renderExcerpt(excerpt, hilighted))}
       </section>`;
-    }
   }
 
   /**

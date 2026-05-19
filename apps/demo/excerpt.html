@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bible-Reading Demo</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://unpkg.com/lit@3",
+          "lit/": "https://unpkg.com/lit@3/"
+        }
+      }
+    </script>
+    <script type="module">
+      import "@cyper8/bible-reading"
+      import "@cyper8/bible-excerpt"
+    </script>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+
+  <body>
+    <section>
+      <h1>Excerpt</h1>
+      <bible-excerpt id="standalone-excerpt" reference="Буття 1"></bible-excerpt>
+    </section>
+
+    <script>
+      document.getElementById("standalone-excerpt")
+      .addEventListener("excerpts-changed", (e) => {
+        let changes = e.detail;
+        console.log(JSON.stringify(changes, null, 4));
+      })
+    </script>
+  </body>
+
+  </html>

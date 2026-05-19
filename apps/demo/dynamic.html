@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bible-Reading Demo</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://unpkg.com/lit@3",
+          "lit/": "https://unpkg.com/lit@3/",
+          "marked": "https://unpkg.com/marked@17"
+        }
+      }
+    </script>
+    <script type="module">
+      import "@cyper8/bible-reading"
+      import "@cyper8/bible-excerpt"
+    </script>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+
+  <body>
+    <section>
+      <h1>Dynamic</h1>
+      <bible-reading readingUrl="https://script.google.com/macros/s/AKfycbzD_7_x61neJrufGhik97z2TWwFaTAzF9NRaAkThkszX1dJTq7JyUkujKmG9dJ3q-qdiQ/exec/json"></bible-reading>
+    </section>
+  </body>
+
+  </html>

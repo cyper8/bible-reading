@@ -1,4 +1,3 @@
-import { BibleLibrary } from "./BibleLibrary.js";
 export declare namespace BollsBible {
     interface Verse {
         pk: number;
@@ -43,6 +42,10 @@ export interface BibleEdition extends BollsBible.Translation {
     language: string;
     books: BollsBible.Book[];
 }
+export interface BibleEditionsFilterOptions {
+    languages?: string[];
+    translations?: BollsBible.Translation['short_name'][];
+}
 export interface BibleReference {
     translation?: BollsBible.Translation["short_name"];
     reference: string;
@@ -50,43 +53,25 @@ export interface BibleReference {
     chapter: number;
     verses?: number[];
 }
+export type BibleReferenceContext = Partial<BibleReference>;
 export interface BibleExcerptData extends BibleReference {
     translation: BollsBible.Translation["short_name"];
     bookNum: number;
     versesData: BollsBible.ChapterVerse[];
     url: string;
 }
-export declare class BollsBibleService {
-    static API_ROOT: string;
-    static TRANSLATIONSINDEX_URL: string;
-    static TRANSLATIONSBOOKS_URL: string;
-    static allEditions: Promise<BibleEdition[]>;
-    static getBollsHomepage(translation: BollsBible.Translation['short_name']): string;
-    static fetchTranslationsIndex(): Promise<BollsBible.L10n[]>;
-    static fetchTranslationsBooks(): Promise<BollsBible.BooksIndex>;
-    static compileEditions(booksIndex: BollsBible.BooksIndex, translationsIndex: BollsBible.L10n[]): {
-        language: string;
-        books: BollsBible.Book[];
-        short_name: string;
-        full_name: string;
-        commentaries?: boolean;
-        updated: number;
-        info?: string;
-        dir?: "rtl" | "ltr";
-    }[];
-    static getEditions(): Promise<BibleEdition[]>;
-    static fetchTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]>;
-    static fetchChapter(translation: string, book: number, chapter: number): Promise<BollsBible.ChapterVerse[]>;
-    static getChapterUrl(translation: string, book: number, chapter: number, verse?: number): string;
-    private _selectedLanguages;
-    get selectedLanguages(): string[];
-    private _selectedTranslations;
-    get selectedTranslations(): string[];
-    library: Promise<BibleLibrary>;
-    constructor();
-    selectLanguages(languages: string[]): Promise<BibleLibrary>;
-    selectTranslations(translations: BollsBible.Translation['short_name'][]): Promise<BibleLibrary>;
-    bookSearch(query: string): Promise<BookSearchResult[]>;
-    getBook(bookName: string, translation?: BollsBible.Translation['short_name']): Promise<BollsBible.Book>;
-}
+export declare const BOLLS_HOSTNAME = "https://bolls.life";
+export declare const API_ROOT = "https://bolls.life";
+export declare const TRANSLATIONSINDEX_URL: string;
+export declare const TRANSLATIONSBOOKS_URL: string;
+export declare const allEditions: Promise<BibleEdition[]>;
+export declare function getBollsHomepage(translation: BollsBible.Translation['short_name']): string;
+export declare function fetchTranslationsIndex(): Promise<BollsBible.L10n[]>;
+export declare function fetchTranslationsBooks(): Promise<BollsBible.BooksIndex>;
+export declare function compileEditions(booksIndex: BollsBible.BooksIndex, translationsIndex: BollsBible.L10n[]): BibleEdition[];
+export declare function getEditions(filterOptions?: BibleEditionsFilterOptions): Promise<BibleEdition[]>;
+export declare function fetchTranslationBooks(translationShortName: string): Promise<BollsBible.Book[]>;
+export declare function fetchChapter(translation: string, book: number, chapter: number): Promise<BollsBible.ChapterVerse[]>;
+export declare function getChapterUrl(translation: string, book: number, chapter: number, verse?: number): string;
+export declare function parseReferenses(refs: string, context?: BibleReferenceContext): BibleReference[];
 //# sourceMappingURL=bolls.d.ts.map

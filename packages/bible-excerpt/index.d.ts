@@ -1,3 +1,2 @@
-export { BibleExcerpt } from "./src/bible-excerpt.js";
-export { BibleController } from './src/BibleController.js';
+export { BibleExcerpt, type ExcerptsChangeEvent } from "./src/bible-excerpt.js";
 //# sourceMappingURL=index.d.ts.map
