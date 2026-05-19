@@ -218,10 +218,10 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
                     body: JSON.stringify(data)
                 });
                 if (response.ok) {
-                    console.log(response.statusText, response.headers);
+                    console.log(await response.json(), response.headers);
                 }
                 else {
-                    throw new Error(`Day wasn't saved. Status: ${await response.text()}`);
+                    throw new Error(`Day wasn't saved. Status: ${response.statusText}`);
                 }
             }
             catch (error) {
