@@ -208,7 +208,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
                 date: day.date.toDateString()
             };
             try {
-                let response = await fetch(this.writingUrl, {
+                await fetch(this.writingUrl, {
                     method: "POST",
                     mode: 'no-cors',
                     headers: {
@@ -216,16 +216,22 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
                     },
                     body: JSON.stringify(data)
                 });
-                if (response.ok) {
-                    console.log(await response.json(), response.headers);
-                }
-                else {
-                    throw new Error(`Day wasn't saved. Status: ${response.statusText}`);
-                }
             }
             catch (error) {
                 this.loadDay(day.date);
                 console.error(error);
+            }
+            if (this.static) {
+                try {
+                    location.href = encodeURI(this.readingUrl + `?date=${day.date.toDateString()}`);
+                }
+                catch (error) {
+                    console.error(error);
+                }
+                return;
+            }
+            else {
+                return;
             }
         }
     }
