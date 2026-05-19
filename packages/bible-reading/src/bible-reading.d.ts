@@ -16,6 +16,7 @@ export type RawReadingDay = {
 export declare function isRawReadingDay(obj: Object): obj is RawReadingDay;
 export declare class BibleReading extends LitElement {
     readingUrl: string;
+    writingUrl: string;
     date: string;
     defaultTranslation: BollsBible.Translation['short_name'];
     static: boolean;

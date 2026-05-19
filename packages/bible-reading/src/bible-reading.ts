@@ -55,6 +55,7 @@ export function isRawReadingDay(obj: Object): obj is RawReadingDay {
 export class BibleReading extends LitElement {
 
   @property({ type: String }) readingUrl: string = '';
+  @property({ type: String }) writingUrl: string = this.readingUrl;
   @property({ type: String }) date: string = stripHours(new Date()).toDateString();
   @property({ type: String }) defaultTranslation: BollsBible.Translation['short_name'] = 'UBIO';
   @property({ type: Boolean }) static = false;
@@ -234,16 +235,17 @@ export class BibleReading extends LitElement {
 
   private async uploadReadingDay() {
     let day = this.day;
-    if (this.readingUrl && day && day.date && day.reading) {
+    if (this.writingUrl && day && day.date && day.reading) {
       this.changed = false;
       let data = {
         ...day,
         date: day.date.toDateString()
       };
       try {
-        let response = await fetch(this.readingUrl, {
+        let response = await fetch(this.writingUrl, {
           method: "POST",
           mode: 'no-cors',
+          redirect: "follow",
           headers: {
             "Content-Type": "application/json"
           },
@@ -252,7 +254,7 @@ export class BibleReading extends LitElement {
         if (response.ok) {
           console.log(response.statusText, response.headers);
         } else {
-          throw new Error(`Day wasn't saved. Status: ${response.statusText}`)
+          throw new Error(`Day wasn't saved. Status: ${await response.text()}`)
         }
       } catch (error) {
         this.loadDay(day.date);

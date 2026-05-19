@@ -38,6 +38,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     constructor() {
         super();
         this.readingUrl = '';
+        this.writingUrl = this.readingUrl;
         this.date = stripHours(new Date()).toDateString();
         this.defaultTranslation = 'UBIO';
         this.static = false;
@@ -200,16 +201,17 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
     }
     async uploadReadingDay() {
         let day = this.day;
-        if (this.readingUrl && day && day.date && day.reading) {
+        if (this.writingUrl && day && day.date && day.reading) {
             this.changed = false;
             let data = {
                 ...day,
                 date: day.date.toDateString()
             };
             try {
-                let response = await fetch(this.readingUrl, {
+                let response = await fetch(this.writingUrl, {
                     method: "POST",
                     mode: 'no-cors',
+                    redirect: "follow",
                     headers: {
                         "Content-Type": "application/json"
                     },
@@ -219,7 +221,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
                     console.log(response.statusText, response.headers);
                 }
                 else {
-                    throw new Error(`Day wasn't saved. Status: ${response.statusText}`);
+                    throw new Error(`Day wasn't saved. Status: ${await response.text()}`);
                 }
             }
             catch (error) {
@@ -312,6 +314,9 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
 __decorate([
     property({ type: String })
 ], BibleReading.prototype, "readingUrl", void 0);
+__decorate([
+    property({ type: String })
+], BibleReading.prototype, "writingUrl", void 0);
 __decorate([
     property({ type: String })
 ], BibleReading.prototype, "date", void 0);
