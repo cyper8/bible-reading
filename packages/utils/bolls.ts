@@ -1,4 +1,4 @@
-import { spreadNumbers } from "./spreadNumbers";
+import { spreadNumbers } from "./spreadNumbers.js";
 
 export namespace BollsBible {
 
