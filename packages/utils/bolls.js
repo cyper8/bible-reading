@@ -1,4 +1,4 @@
-import { spreadNumbers } from "./spreadNumbers";
+import { spreadNumbers } from "./spreadNumbers.js";
 export const BOLLS_HOSTNAME = 'https://bolls.life';
 export const API_ROOT = BOLLS_HOSTNAME;
 export const TRANSLATIONSINDEX_URL = API_ROOT + '/static/bolls/app/views/languages.json';

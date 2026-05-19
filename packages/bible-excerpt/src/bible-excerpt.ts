@@ -2,20 +2,32 @@ import { LitElement, PropertyValues, css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
+// import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { BibleReference, fetchChapter, getChapterUrl, getEditions, parseReferenses, type BibleExcerptData, type BollsBible } from '../../utils/bolls.js';
 import { spreadNumbers } from '../../utils/spreadNumbers.js';
 import { type InputSuggestion, type AidedInputEvent, ValueChangedEvent, ValueUnchangedEvent } from "../../simple-aided-input/index.js";
 import "../../simple-aided-input/index.js";
 
-import linkIcon from "./link-chain-svgrepo-com.svg?raw";
-import editIcon from "./edit-svgrepo-com.svg?raw";
+//import linkIcon from "./link-chain-svgrepo-com.svg?raw";
+//import editIcon from "./edit-svgrepo-com.svg?raw";
 import { BibleLibrary } from '../../utils/BibleLibrary.js';
 import { quzzySearch } from '../../utils/quzzySearch.js';
 
 export type ExcerptsChangeEvent = CustomEvent<BibleExcerptData[]> & {
   type: 'excerpts-changed'
 }
+
+const linkIcon = html`<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.5442 10.4558C11.8385 8.75022 9.07316 8.75022 7.36753 10.4558L4.27922 13.5442C2.57359 15.2498 2.57359 18.0152 4.27922 19.7208C5.98485 21.4264 8.75021 21.4264 10.4558 19.7208L12 18.1766" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.4558 13.5442C12.1614 15.2498 14.9268 15.2498 16.6324 13.5442L19.7207 10.4558C21.4264 8.75021 21.4264 5.98485 19.7207 4.27922C18.0151 2.57359 15.2497 2.57359 13.5441 4.27922L12 5.82338" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const editIcon = html`<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M16.4745 5.40801L18.5917 7.52524M17.8358 3.54289L12.1086 9.27005C11.8131 9.56562 11.6116 9.94206 11.5296 10.3519L11 13L13.6481 12.4704C14.0579 12.3884 14.4344 12.1869 14.7299 11.8914L20.4571 6.16423C21.181 5.44037 21.181 4.26676 20.4571 3.5429C19.7332 2.81904 18.5596 2.81903 17.8358 3.54289Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19 15V18C19 19.1046 18.1046 20 17 20H6C4.89543 20 4 19.1046 4 18V7C4 5.89543 4.89543 5 6 5H9" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
 
 @customElement('bible-excerpt')
 export class BibleExcerpt extends LitElement {
@@ -149,14 +161,14 @@ export class BibleExcerpt extends LitElement {
   }
 
   static renderLink(url: string) {
-    return html`<a class="icon" href="${encodeURI(url)}">${unsafeSVG(linkIcon)}</a>`;
+    return html`<a class="icon" href="${encodeURI(url)}">${linkIcon}</a>`;
   }
 
   renderEdit() {
     return html`<a class="icon" 
     @click=${() => {
         this.edit = true;
-      }}>${unsafeSVG(editIcon)}</a>`;
+      }}>${editIcon}</a>`;
   }
 
   protected updated(_changedProperties: PropertyValues<BibleExcerpt>): void {
