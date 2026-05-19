@@ -210,7 +210,7 @@ let BibleReading = BibleReading_1 = class BibleReading extends LitElement {
             try {
                 let response = await fetch(this.writingUrl, {
                     method: "POST",
-                    redirect: "follow",
+                    mode: 'no-cors',
                     headers: {
                         "Content-Type": "application/json"
                     },
